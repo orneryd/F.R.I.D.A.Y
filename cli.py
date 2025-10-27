@@ -569,6 +569,75 @@ def cmd_validate_3d(args):
         logger.info("❌ 3D System validation FAILED")
 
 
+def cmd_cluster(args):
+    """Cluster neurons for better organization."""
+    logger.info("=" * 70)
+    logger.info("NEURON CLUSTERING")
+    logger.info("=" * 70)
+    
+    graph, _, _, _, _ = init_system(args.database, args.dimension)
+    
+    if len(graph.neurons) == 0:
+        logger.warning("No neurons in database. Train the AI first.")
+        return
+    
+    logger.info(f"Clustering {len(graph.neurons)} neurons...")
+    logger.info("")
+    
+    # Import clustering engine
+    from neuron_system.spatial.neuron_clustering import NeuronClusteringEngine
+    
+    engine = NeuronClusteringEngine()
+    neurons = list(graph.neurons.values())
+    
+    # Choose clustering method
+    method = args.method
+    
+    if method == 'kmeans':
+        logger.info(f"Using K-Means clustering (k={args.k})...")
+        clusters = engine.cluster_kmeans(neurons, n_clusters=args.k)
+    elif method == 'dbscan':
+        logger.info(f"Using DBSCAN clustering (eps={args.eps}, min_samples={args.min_samples})...")
+        clusters = engine.cluster_dbscan(neurons, eps=args.eps, min_samples=args.min_samples)
+    elif method == 'topics':
+        logger.info("Using topic-based clustering...")
+        clusters = engine.cluster_by_topics(neurons)
+    elif method == 'hybrid':
+        logger.info(f"Using hybrid clustering (k={args.k})...")
+        clusters = engine.cluster_hybrid(neurons, n_clusters=args.k)
+    else:
+        logger.error(f"Unknown method: {method}")
+        return
+    
+    logger.info("")
+    logger.info("Clustering Results:")
+    logger.info("-" * 40)
+    
+    # Show clusters
+    for cluster in sorted(clusters.values(), key=lambda c: c.size(), reverse=True)[:10]:
+        tags_str = ', '.join(list(cluster.tags)[:3]) if cluster.tags else 'no tags'
+        quality_str = f", quality={cluster.quality_score:.3f}" if cluster.quality_score > 0 else ""
+        logger.info(f"  Cluster {cluster.id} ({cluster.name}): {cluster.size()} neurons{quality_str}, tags=[{tags_str}]")
+    
+    if len(clusters) > 10:
+        logger.info(f"  ... and {len(clusters) - 10} more clusters")
+    
+    # Statistics
+    logger.info("")
+    stats = engine.get_statistics()
+    logger.info("Statistics:")
+    logger.info(f"  Total clusters: {stats['num_clusters']}")
+    logger.info(f"  Total neurons: {stats['total_neurons']}")
+    logger.info(f"  Avg cluster size: {stats['avg_cluster_size']:.1f}")
+    logger.info(f"  Min cluster size: {stats['min_cluster_size']}")
+    logger.info(f"  Max cluster size: {stats['max_cluster_size']}")
+    if stats['avg_quality_score'] > 0:
+        logger.info(f"  Avg quality score: {stats['avg_quality_score']:.3f}")
+    
+    logger.info("")
+    logger.info("✅ Clustering complete")
+
+
 def cmd_migrate(args):
     """Migrate to different dimension."""
     logger.info("=" * 70)
@@ -730,6 +799,34 @@ def main():
     # Validate 3D command
     validate_3d_parser = subparsers.add_parser('validate-3d', help='Validate 3D system')
     validate_3d_parser.set_defaults(func=cmd_validate_3d)
+    
+    # Cluster command
+    cluster_parser = subparsers.add_parser('cluster', help='Cluster neurons')
+    cluster_parser.add_argument(
+        '--method', '-m',
+        choices=['kmeans', 'dbscan', 'topics', 'hybrid'],
+        default='hybrid',
+        help='Clustering method (default: hybrid)'
+    )
+    cluster_parser.add_argument(
+        '--k',
+        type=int,
+        default=10,
+        help='Number of clusters for k-means/hybrid (default: 10)'
+    )
+    cluster_parser.add_argument(
+        '--eps',
+        type=float,
+        default=0.3,
+        help='DBSCAN epsilon parameter (default: 0.3)'
+    )
+    cluster_parser.add_argument(
+        '--min-samples',
+        type=int,
+        default=3,
+        help='DBSCAN min_samples parameter (default: 3)'
+    )
+    cluster_parser.set_defaults(func=cmd_cluster)
     
     # Migrate command
     migrate_parser = subparsers.add_parser('migrate', help='Migrate to different dimension')

@@ -307,4 +307,4 @@ python cli.py learn --rounds 3 --save
 ---
 
 ## License
-[Your License Here]
+[MIT]
