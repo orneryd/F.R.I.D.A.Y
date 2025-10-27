@@ -64,3 +64,19 @@ Thumbs.db
 # Kiro (keep the specs)
 .kiro/settings/
 .kiro/cache/
+
+
+# Data directory
+*.db
+*.db-shm
+*.db-wal
+*.log
+
+# Test archives
+tests/archive/
+
+# Temporary files
+*.tmp
+*.temp
+example_*.py
+*_config.py

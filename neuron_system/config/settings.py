@@ -19,7 +19,7 @@ class Settings:
     spatial_bounds_max: Tuple[float, float, float] = (100.0, 100.0, 100.0)
     
     # Neuron configuration
-    vector_dimensions: int = 384
+    vector_dimensions: int = None  # Auto-detect from model (default: 384)
     default_activation_threshold: float = 0.5
     
     # Synapse configuration

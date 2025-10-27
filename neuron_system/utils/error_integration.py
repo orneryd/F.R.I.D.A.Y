@@ -66,8 +66,9 @@ def safe_compress_with_fallback(compression_engine, data: str) -> tuple[np.ndarr
             recoverable=True
         )
         
-        # Return zero vector as fallback
-        fallback_vector = np.zeros(384, dtype=np.float32)
+        # Return zero vector as fallback (dimension will be validated later)
+        # Use 384 as default, but this should be caught by validation
+        fallback_vector = np.zeros(384, dtype=np.float32)  # TODO: Make dynamic
         metadata = {
             "success": False,
             "error": str(e),

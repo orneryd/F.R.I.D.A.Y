@@ -35,7 +35,7 @@ async def adjust_neuron(request: AdjustNeuronRequest):
     new_vector = current_vector + learning_rate * (target - current)
     
     - **neuron_id**: UUID of the neuron to adjust
-    - **target_vector**: Target vector (384 dimensions) OR
+    - **target_vector**: Target vector (dimension auto-detected) OR
     - **target_text**: Target text to compress into vector
     - **learning_rate**: Learning rate for adjustment (0.0 to 1.0)
     

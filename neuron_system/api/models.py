@@ -160,14 +160,16 @@ class NeighborsResponse(BaseModel):
 class AdjustNeuronRequest(BaseModel):
     """Request to adjust a neuron's vector"""
     neuron_id: str = Field(..., description="Neuron UUID to adjust")
-    target_vector: Optional[List[float]] = Field(None, description="Target vector (384 dimensions)")
+    target_vector: Optional[List[float]] = Field(None, description="Target vector (dimension auto-detected)")
     target_text: Optional[str] = Field(None, description="Target text to compress into vector")
     learning_rate: float = Field(0.1, gt=0, le=1.0, description="Learning rate for adjustment")
     
     @validator('target_vector')
     def validate_vector_dimensions(cls, v):
-        if v is not None and len(v) != 384:
-            raise ValueError("Vector must have exactly 384 dimensions")
+        # Dynamic validation - accept any reasonable dimension
+        if v is not None:
+            if len(v) < 128 or len(v) > 2048:
+                raise ValueError(f"Vector dimension {len(v)} out of reasonable range (128-2048)")
         return v
 
 

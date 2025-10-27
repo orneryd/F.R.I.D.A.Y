@@ -234,7 +234,7 @@ RECOVERY_SUGGESTIONS = {
         "Check system resource availability"
     ],
     ErrorCode.TRAINING_INVALID_VECTOR: [
-        "Ensure vector has correct dimensions (384)",
+        "Ensure vector has correct dimensions (auto-detected from model)",
         "Check for NaN or infinite values",
         "Verify vector is normalized"
     ],

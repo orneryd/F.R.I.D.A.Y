@@ -1,8 +1,9 @@
 """
-Compression Engine for converting raw data into 384-dimensional embeddings.
+Compression Engine for converting raw data into embeddings.
 
 This module provides the CompressionEngine class that uses sentence-transformers
 to compress text data into fixed-size vector representations.
+Dimension is automatically detected from the model (typically 384, 768, or 1024).
 """
 
 import time
@@ -16,15 +17,15 @@ logger = logging.getLogger(__name__)
 
 class CompressionEngine:
     """
-    Engine for compressing text data into 384-dimensional embeddings.
+    Engine for compressing text data into embeddings.
     
-    Uses the sentence-transformers library with the all-MiniLM-L6-v2 model
-    for lightweight, fast embedding generation.
+    Uses the sentence-transformers library for embedding generation.
+    Vector dimension is automatically detected from the model.
     
     Attributes:
         model: The sentence transformer model instance
         model_name: Name of the embedding model
-        vector_dim: Dimensionality of output vectors (384)
+        vector_dim: Dimensionality of output vectors (auto-detected)
     """
     
     def __init__(self, model_name: str = "all-MiniLM-L6-v2", max_input_length: int = 10000, use_gpu: bool = True):
@@ -33,7 +34,8 @@ class CompressionEngine:
         
         Args:
             model_name: Name of the sentence-transformers model to use.
-                       Default is "all-MiniLM-L6-v2" (80MB, 384 dimensions)
+                       Default is "all-MiniLM-L6-v2" (80MB, 384D)
+                       Other options: "all-mpnet-base-v2" (768D), etc.
             max_input_length: Maximum allowed input text length (default: 10000 chars)
             use_gpu: Whether to use GPU acceleration if available (default: True)
         
@@ -42,7 +44,7 @@ class CompressionEngine:
             Exception: If model loading fails
         """
         self.model_name = model_name
-        self.vector_dim = 384
+        self.vector_dim = None  # Will be set after model loads
         self.max_input_length = max_input_length
         self.use_gpu = use_gpu
         self._model = None
@@ -82,13 +84,16 @@ class CompressionEngine:
             else:
                 logger.info("Model running on CPU")
             
-            # Verify model is working with a test
+            # Verify model is working with a test and get actual dimension
             test_vector = self._model.encode("test", convert_to_numpy=True)
             if test_vector is None or len(test_vector) == 0:
                 raise Exception("Model loaded but failed to generate embeddings")
             
+            # Set vector_dim from actual model output
+            self.vector_dim = len(test_vector)
+            
             self._model_loaded = True
-            logger.info(f"Model {self.model_name} loaded successfully (dim: {len(test_vector)})")
+            logger.info(f"Model {self.model_name} loaded successfully (dim: {self.vector_dim})")
             
         except ImportError:
             error_msg = (
@@ -145,7 +150,9 @@ class CompressionEngine:
         raise_on_error: bool = False
     ) -> Tuple[np.ndarray, Dict[str, Any]]:
         """
-        Compress a single text input into a 384-dimensional vector.
+        Compress a single text input into a vector.
+        
+        Dimension is auto-detected from the model.
         
         Args:
             data: Text string to compress
@@ -279,8 +286,9 @@ class CompressionEngine:
         raise_on_error: bool = False
     ) -> Tuple[np.ndarray, List[Dict[str, Any]]]:
         """
-        Compress multiple text inputs into 384-dimensional vectors.
+        Compress multiple text inputs into vectors.
         
+        Dimension is auto-detected from the model.
         This method is more efficient than calling compress() multiple times
         as it processes inputs in batches. Automatically optimizes batch size for GPU.
         
@@ -469,12 +477,20 @@ class CompressionEngine:
             True if vector is valid, False otherwise
         """
         if not isinstance(vector, np.ndarray):
+            logger.error(f"Vector is not numpy array: {type(vector)}")
             return False
         
+        # If vector_dim not set yet, accept any dimension
+        if self.vector_dim is None:
+            logger.warning("vector_dim not set, accepting any dimension")
+            return np.isfinite(vector).all()
+        
         if vector.shape != (self.vector_dim,):
+            logger.error(f"Vector shape mismatch: {vector.shape} != ({self.vector_dim},)")
             return False
         
         if not np.isfinite(vector).all():
+            logger.error("Vector contains non-finite values")
             return False
         
         return True

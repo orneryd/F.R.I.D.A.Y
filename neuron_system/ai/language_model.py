@@ -388,7 +388,7 @@ class LanguageModel:
         
         # Auto-generate position if not provided
         if position is None:
-            position = self._generate_position()
+            position = self._generate_position(tags=tags)
         
         # Create knowledge neuron
         neuron = KnowledgeNeuron(
@@ -412,15 +412,41 @@ class LanguageModel:
         logger.info(f"Learned new knowledge with neuron ID: {neuron.id}")
         return neuron.id
     
-    def _generate_position(self) -> Vector3D:
+    def _generate_position(self, tags: Optional[List[str]] = None) -> Vector3D:
         """
         Generate a position for a new neuron.
+        
+        Uses smart positioning if available, otherwise random.
+        
+        Args:
+            tags: Semantic tags for topic-based positioning
         
         Returns:
             Generated position
         """
-        # Simple strategy: random position within bounds
-        # Could be improved with clustering algorithms
+        # Try smart positioning if available
+        try:
+            from neuron_system.spatial.smart_positioning import SmartPositioner
+            
+            if not hasattr(self, '_smart_positioner'):
+                self._smart_positioner = SmartPositioner(self.graph.bounds)
+            
+            # Use topic-based positioning if tags provided
+            if tags:
+                return self._smart_positioner.position_by_topic(tags, spread=10.0)
+            
+            # Otherwise semantic positioning
+            existing = list(self.graph.neurons.values())
+            if existing:
+                # Create temporary neuron for similarity check
+                # (we don't have the neuron object yet)
+                return self._smart_positioner.position_density_aware(
+                    existing, min_distance=5.0
+                )
+        except Exception as e:
+            logger.debug(f"Smart positioning failed, using random: {e}")
+        
+        # Fallback: random position within bounds
         bounds = self.graph.bounds
         if bounds:
             min_bound, max_bound = bounds

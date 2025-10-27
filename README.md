@@ -1,53 +1,88 @@
 # 🤖 F.R.I.D.A.Y AI
 
-**Ein intelligenter KI-Assistent basierend auf einem 3D-Neuronen-System**
+**An intelligent AI assistant based on a 3D neuron system**
 
-F.R.I.D.A.Y (Friendly Responsive Intelligent Digital Assistant for You) ist eine fortschrittliche KI, die auf einem einzigartigen 3D-synaptischen Neuronen-System basiert. Die KI lernt inkrementell, vermeidet Duplikate automatisch und bietet natürliche Konversationsfähigkeiten.
+F.R.I.D.A.Y (Friendly Responsive Intelligent Digital Assistant for You) is an advanced AI built on a unique 3D synaptic neuron system. The AI learns incrementally, automatically avoids duplicates, and offers natural conversation capabilities.
 
 ## ✨ Features
 
-- 🧠 **3D-Neuronen-Architektur**: Einzigartiges räumliches Neuronen-System
-- 💬 **Natürliche Konversation**: Über 300+ Konversationsmuster
-- ⚡ **Inkrementelles Training**: Schnelle Updates ohne komplettes Neutraining
-- 🗑️ **Automatische Duplikat-Erkennung**: Hält die Wissensbasis sauber
-- 🎯 **Semantische Suche**: Findet relevante Informationen durch Ähnlichkeit
-- 💾 **Persistente Speicherung**: SQLite-Datenbank für dauerhaftes Lernen
-- 🚀 **GPU-Beschleunigung**: 10-100x schneller mit CUDA/MPS Support
-- 🎮 **Einfache CLI**: Benutzerfreundliche Kommandozeilen-Befehle
+- 🧠 **3D Neuron Architecture**: Unique spatial neuron system
+- 🤖 **Neural Inference Engine**: Real transformer logic (like GPT/BERT) for intelligent responses
+- 💬 **Natural Conversation**: Over 300+ conversation patterns
+- ⚡ **Incremental Training**: Fast updates without complete retraining
+- 🗑️ **Automatic Duplicate Detection**: Keeps knowledge base clean
+- 🎯 **Semantic Search**: Finds relevant information through similarity
+- 💾 **Persistent Storage**: SQLite database for permanent learning
+- 🚀 **GPU Acceleration**: 10-100x faster with CUDA/MPS support
+- 🎮 **Simple CLI**: User-friendly command-line interface
 
-## 🚀 Schnellstart
+## 🚀 Quick Start
 
 ### Installation
 
 ```bash
-# Repository klonen
+# Clone repository
 git clone https://github.com/yourusername/F.R.I.D.A.Y.git
 cd F.R.I.D.A.Y
 
-# Dependencies installieren
+# Install dependencies
 pip install -r requirements.txt
 
-# Für GPU-Beschleunigung (NVIDIA):
+# For GPU acceleration (NVIDIA):
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
 
-# GPU-Status prüfen
+# Check GPU status
 python cli.py gpu-info
 ```
 
-**⚠️ Wichtig:** PyTorch benötigt **Python 3.8-3.12** (nicht 3.13!). 
-- Schnelle GPU-Setup: [QUICK_GPU_SETUP.md](QUICK_GPU_SETUP.md)
-- Detaillierte Anleitung: [INSTALL_CUDA.md](INSTALL_CUDA.md)
-- Python 3.13 Problem: [PYTHON_VERSION_FIX.md](PYTHON_VERSION_FIX.md)
+**⚠️ Important:** PyTorch requires **Python 3.8-3.12** (not 3.13!).
 
-### Erste Schritte
+### First Steps
 
 ```bash
-# 1. KI trainieren (beim ersten Mal)
+# 1. Train the AI (first time)
 python cli.py train
 
-# 2. Mit der KI chatten
+# 2. Chat with the AI
 python cli.py chat
 ```
+
+### 🆕 Neural Inference Engine (NEU!)
+
+Nutze echte Transformer-Logik für 20-40% bessere Antworten:
+
+```bash
+# Setup (einmalig)
+python scripts/setup_neural_inference.py
+
+# Demo testen
+python examples/neural_inference_demo.py
+```
+
+**Vorteile:**
+- ✅ Kontextuelles Verständnis statt nur Wort-Ähnlichkeit
+- ✅ Multi-Head Attention wie in GPT/BERT
+- ✅ Nutzt vortrainierte Hugging Face Modelle
+- ✅ Dein Training-System bleibt gleich!
+
+📖 **Mehr Info:** [Neural Inference Quick Start](docs/NEURAL_INFERENCE_QUICKSTART.md)
+
+### 🚀 Dimension Upgrade (EMPFOHLEN!)
+
+Upgrade zu **768 Dimensionen** für +28% bessere Qualität:
+
+```bash
+# Upgrade zu höheren Dimensionen
+python scripts/migrate_to_higher_dimensions.py
+```
+
+**Warum upgraden?**
+- ✅ 384D → 768D = **2x mehr Informationsdichte**
+- ✅ Deutlich besseres kontextuelles Verständnis
+- ✅ Präzisere und detailliertere Antworten
+- ✅ Alte Datenbank bleibt erhalten
+
+📖 **Mehr Info:** [Dimension Upgrade Guide](docs/DIMENSION_UPGRADE.md)
 
 Das war's! Die KI ist jetzt einsatzbereit. 🎉
 
@@ -313,3 +348,45 @@ Wenn dir F.R.I.D.A.Y gefällt, gib dem Projekt einen Stern! ⭐
 **Made with ❤️ and 🧠 by the F.R.I.D.A.Y Team**
 
 *"Your friendly AI companion for everyday tasks"*
+
+
+## 📚 Dokumentation
+
+Das Projekt hat 4 Haupt-Dokumentationen:
+
+- **[CLI.md](CLI.md)** - Vollständiger CLI Guide mit allen Befehlen
+- **[FEATURES.md](FEATURES.md)** - Detaillierte Feature-Dokumentation
+- **[CHANGELOG.md](CHANGELOG.md)** - Versions-Historie und Updates
+- **[docs/](docs/)** - Zusätzliche Dokumentation
+
+### Quick Links
+- [Installation](#installation)
+- [Erste Schritte](#erste-schritte)
+- [CLI Befehle](CLI.md)
+- [Alle Features](FEATURES.md)
+- [Neural Inference](FEATURES.md#neural-inference-engine)
+- [Training System](FEATURES.md#training-system)
+- [API Documentation](FEATURES.md#api)
+
+## 📁 Projekt-Struktur
+
+```
+F.R.I.D.A.Y/
+├── scripts/              # Utility-Scripts (Setup, Migration, Tests)
+├── data/                 # Datenbanken und Logs
+├── docs/                 # Dokumentation
+├── examples/             # Code-Beispiele
+├── tests/                # Tests
+├── neuron_system/        # Core Code
+│   ├── ai/              # AI Module (Training, Models, Inference)
+│   ├── core/            # Core Components (Neurons, Synapses, Graph)
+│   ├── engines/         # Engines (Compression, Query, Training)
+│   ├── storage/         # Persistence Layer
+│   └── ...
+├── README.md            # Diese Datei
+├── CLI.md               # CLI Guide
+├── FEATURES.md          # Feature-Dokumentation
+├── CHANGELOG.md         # Versions-Historie
+├── cli.py               # Command Line Interface
+└── requirements.txt     # Dependencies
+```

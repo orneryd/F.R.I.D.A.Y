@@ -86,8 +86,8 @@ class TrainingEngine:
         self._max_log_size = 10000  # Maximum operations to keep in memory
         self._enable_logging = True
         
-        # Validation settings
-        self._vector_dimension = 384  # Expected vector dimension
+        # Validation settings (will be auto-detected from first vector)
+        self._vector_dimension = None  # Auto-detect from vectors
         self._min_vector_value = -10.0  # Minimum allowed vector value
         self._max_vector_value = 10.0  # Maximum allowed vector value
         
@@ -208,7 +208,17 @@ class TrainingEngine:
         if vector is None:
             return False
         
+        # Auto-detect dimension from first vector
+        if self._vector_dimension is None:
+            self._vector_dimension = len(vector)
+            logger.info(f"Auto-detected vector dimension: {self._vector_dimension}")
+            return True
+        
         if len(vector) != self._vector_dimension:
+            logger.warning(
+                f"Vector dimension mismatch: expected {self._vector_dimension}, "
+                f"got {len(vector)}"
+            )
             return False
         
         return True
@@ -1154,7 +1164,9 @@ class TrainingEngine:
         
         if not compression_meta.get("success", False):
             logger.warning("Failed to compress tool description, using zero vector")
-            vector = np.zeros(384)
+            # Use dimension from compression engine
+            dim = compression_engine.vector_dim or 384  # Fallback to 384 if not set
+            vector = np.zeros(dim)
         
         # Calculate position if not provided
         if position is None:

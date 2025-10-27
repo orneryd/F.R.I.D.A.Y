@@ -59,18 +59,26 @@ class NeuronGraph:
         self._neuron_store = None
         self._synapse_store = None
     
-    def attach_storage(self, neuron_store=None, synapse_store=None):
+    def attach_storage(self, db_manager_or_neuron_store=None, synapse_store=None):
         """
         Attach storage layer for automatic persistence.
         
         Args:
-            neuron_store: NeuronStore instance
-            synapse_store: SynapseStore instance
+            db_manager_or_neuron_store: DatabaseManager or NeuronStore instance
+            synapse_store: SynapseStore instance (optional if DatabaseManager provided)
         """
-        if neuron_store:
-            self._neuron_store = neuron_store
-        if synapse_store:
-            self._synapse_store = synapse_store
+        # If DatabaseManager provided, create stores
+        if db_manager_or_neuron_store and hasattr(db_manager_or_neuron_store, 'get_connection'):
+            from neuron_system.storage.neuron_store import NeuronStore
+            from neuron_system.storage.synapse_store import SynapseStore
+            self._neuron_store = NeuronStore(db_manager_or_neuron_store)
+            self._synapse_store = SynapseStore(db_manager_or_neuron_store)
+        else:
+            # Direct store assignment
+            if db_manager_or_neuron_store:
+                self._neuron_store = db_manager_or_neuron_store
+            if synapse_store:
+                self._synapse_store = synapse_store
     
     @property
     def neuron_store(self):
@@ -957,3 +965,72 @@ class NeuronGraph:
             if self.remove_synapse(synapse_id, update_storage=update_storage):
                 count += 1
         return count
+
+    def save(self):
+        """
+        Save the graph to persistent storage.
+        
+        Saves all neurons and synapses to the attached storage layer.
+        Uses upsert logic (create if not exists, update if exists).
+        """
+        if not self._neuron_store or not self._synapse_store:
+            raise RuntimeError("No storage layer attached. Use attach_storage() first.")
+        
+        # Save all neurons (upsert: try update first, then create)
+        neurons = list(self.neurons.values())
+        if neurons:
+            # Try to update existing neurons
+            updated = self._neuron_store.batch_update(neurons)
+            
+            # Create neurons that don't exist yet
+            if updated < len(neurons):
+                # Find neurons that weren't updated
+                neurons_to_create = []
+                for neuron in neurons:
+                    existing = self._neuron_store.get(neuron.id)
+                    if not existing:
+                        neurons_to_create.append(neuron)
+                
+                if neurons_to_create:
+                    self._neuron_store.batch_create(neurons_to_create)
+        
+        # Save all synapses (upsert: try update first, then create)
+        synapses = list(self.synapses.values())
+        if synapses:
+            # Try to update existing synapses
+            updated = self._synapse_store.batch_update(synapses)
+            
+            # Create synapses that don't exist yet
+            if updated < len(synapses):
+                # Find synapses that weren't updated
+                synapses_to_create = []
+                for synapse in synapses:
+                    existing = self._synapse_store.get(synapse.id)
+                    if not existing:
+                        synapses_to_create.append(synapse)
+                
+                if synapses_to_create:
+                    self._synapse_store.batch_create(synapses_to_create)
+    
+    def load(self):
+        """
+        Load the graph from persistent storage.
+        
+        Loads all neurons and synapses from the attached storage layer.
+        """
+        if not self._neuron_store or not self._synapse_store:
+            raise RuntimeError("No storage layer attached. Use attach_storage() first.")
+        
+        # Load all neurons
+        neurons = self._neuron_store.list_all()
+        for neuron in neurons:
+            self.neurons[neuron.id] = neuron
+            if neuron.position:
+                self.spatial_index.insert(neuron)
+        
+        # Load all synapses
+        synapses = self._synapse_store.list_all()
+        for synapse in synapses:
+            self.synapses[synapse.id] = synapse
+            self._outgoing_synapses[synapse.source_neuron_id].append(synapse.id)
+            self._incoming_synapses[synapse.target_neuron_id].append(synapse.id)
