@@ -47,83 +47,83 @@ python cli.py train
 python cli.py chat
 ```
 
-### 🆕 Neural Inference Engine (NEU!)
+### 🆕 Neural Inference Engine (NEW!)
 
-Nutze echte Transformer-Logik für 20-40% bessere Antworten:
+Use real transformer logic for 20-40% better responses:
 
 ```bash
-# Setup (einmalig)
+# Setup (one-time)
 python scripts/setup_neural_inference.py
 
-# Demo testen
+# Test demo
 python examples/neural_inference_demo.py
 ```
 
-**Vorteile:**
-- ✅ Kontextuelles Verständnis statt nur Wort-Ähnlichkeit
-- ✅ Multi-Head Attention wie in GPT/BERT
-- ✅ Nutzt vortrainierte Hugging Face Modelle
-- ✅ Dein Training-System bleibt gleich!
+**Benefits:**
+- ✅ Contextual understanding instead of just word similarity
+- ✅ Multi-Head Attention like in GPT/BERT
+- ✅ Uses pretrained Hugging Face models
+- ✅ Your training system stays the same!
 
-📖 **Mehr Info:** [Neural Inference Quick Start](docs/NEURAL_INFERENCE_QUICKSTART.md)
+📖 **More Info:** [Neural Inference Quick Start](docs/NEURAL_INFERENCE_QUICKSTART.md)
 
-### 🚀 Dimension Upgrade (EMPFOHLEN!)
+### 🚀 Dimension Upgrade (RECOMMENDED!)
 
-Upgrade zu **768 Dimensionen** für +28% bessere Qualität:
+Upgrade to **768 dimensions** for +28% better quality:
 
 ```bash
-# Upgrade zu höheren Dimensionen
+# Upgrade to higher dimensions
 python scripts/migrate_to_higher_dimensions.py
 ```
 
-**Warum upgraden?**
-- ✅ 384D → 768D = **2x mehr Informationsdichte**
-- ✅ Deutlich besseres kontextuelles Verständnis
-- ✅ Präzisere und detailliertere Antworten
-- ✅ Alte Datenbank bleibt erhalten
+**Why upgrade?**
+- ✅ 384D → 768D = **2x more information density**
+- ✅ Significantly better contextual understanding
+- ✅ More precise and detailed responses
+- ✅ Old database remains preserved
 
-📖 **Mehr Info:** [Dimension Upgrade Guide](docs/DIMENSION_UPGRADE.md)
+📖 **More Info:** [Dimension Upgrade Guide](docs/DIMENSION_UPGRADE.md)
 
-Das war's! Die KI ist jetzt einsatzbereit. 🎉
+That's it! The AI is now ready to use. 🎉
 
-## 📖 Verwendung
+## 📖 Usage
 
-### Basis-Befehle
+### Basic Commands
 
 ```bash
-# Vollständiges Training
+# Full training
 python cli.py train
 
-# Inkrementelles Update (schnell!)
-python cli.py update
-
-# Interaktiver Chat
+# Interactive chat
 python cli.py chat
 
-# KI testen
-python cli.py test
+# Add knowledge
+python cli.py learn "AI is artificial intelligence" --tags ai
 
-# Statistiken anzeigen
+# Query the AI
+python cli.py query "What is AI?"
+
+# Show statistics
 python cli.py stats
 ```
 
-### Erweiterte Optionen
+### Advanced Options
 
 ```bash
-# Training mit externen Datasets
+# Training with external datasets
 python cli.py train --with-datasets --max-samples 5000
 
-# Chat mit mehr Kontext
-python cli.py chat --context-size 10 --min-activation 0.3
+# Chat with more context
+python cli.py chat --context-size 10 --neural
 
-# Eigene Datenbank verwenden
+# Use custom database
 python cli.py train --database my_ai.db
 python cli.py chat --database my_ai.db
 ```
 
-Siehe [CLI_GUIDE.md](CLI_GUIDE.md) für detaillierte Dokumentation.
+See [CLI.md](CLI.md) for detailed documentation.
 
-## 💬 Chat-Beispiel
+## 💬 Chat Example
 
 ```
 You: Hello
@@ -143,197 +143,198 @@ You: Thank you
 AI: You're very welcome!
 ```
 
-## 🧠 Architektur
+## 🧠 Architecture
 
-### 3D-Neuronen-System
+### 3D Neuron System
 
-F.R.I.D.A.Y verwendet ein einzigartiges 3D-räumliches Neuronen-System:
+F.R.I.D.A.Y uses a unique 3D spatial neuron system:
 
-- **Neuronen**: Wissenseinheiten im 3D-Raum positioniert
-- **Synapsen**: Gewichtete Verbindungen zwischen verwandten Neuronen
-- **Vektoren**: 384-dimensionale Embeddings für semantische Ähnlichkeit
-- **Aktivierung**: Propagierung durch das Netzwerk für Kontext
+- **Neurons**: Knowledge units positioned in 3D space
+- **Synapses**: Weighted connections between related neurons
+- **Vectors**: 384-dimensional embeddings for semantic similarity
+- **Activation**: Propagation through the network for context
 
-### Komponenten
+### Components
 
 ```
 F.R.I.D.A.Y/
-├── neuron_system/          # Kern-System
-│   ├── core/               # Basis-Komponenten (Neuronen, Synapsen, Graph)
-│   ├── engines/            # Verarbeitungs-Engines (Query, Training, Compression)
-│   ├── ai/                 # KI-Komponenten
-│   │   ├── language_model.py        # Haupt-Sprachmodell
-│   │   ├── incremental_trainer.py   # Inkrementelles Training
-│   │   ├── conversation_knowledge.py # Konversationsdaten
-│   │   └── natural_dialogue.py      # Natürliche Dialoge
-│   └── storage/            # Persistenz (SQLite)
-├── cli.py                  # Kommandozeilen-Interface
-└── main.py                 # Haupt-Container
+├── neuron_system/          # Core System
+│   ├── core/               # Base Components (Neurons, Synapses, Graph)
+│   ├── engines/            # Processing Engines (Query, Training, Compression)
+│   ├── ai/                 # AI Components
+│   │   ├── language_model.py        # Main Language Model
+│   │   ├── incremental_trainer.py   # Incremental Training
+│   │   ├── conversation_knowledge.py # Conversation Data
+│   │   └── natural_dialogue.py      # Natural Dialogues
+│   └── storage/            # Persistence (SQLite)
+├── cli.py                  # Command Line Interface
+└── main.py                 # Main Container
 ```
 
 ## 📊 Performance
 
-### Aktuelle Statistiken
+### Current Statistics
 
-- **Neuronen**: ~14,000
-- **Synapsen**: ~8,500
-- **Konnektivität**: 0.59 (gut vernetzt)
-- **Datenbank-Größe**: ~50 MB
-- **Antwortzeit**: < 1 Sekunde
+- **Neurons**: ~14,000
+- **Synapses**: ~8,500
+- **Connectivity**: 0.59 (well connected)
+- **Database Size**: ~50 MB
+- **Response Time**: < 1 second
 
-### Trainingszeiten
+### Training Times
 
-- **Vollständiges Training**: 5-10 Minuten
-- **Mit Datasets**: 20-30 Minuten
-- **Inkrementelles Update**: 1-3 Minuten
+- **Full Training**: 5-10 minutes
+- **With Datasets**: 20-30 minutes
+- **Incremental Update**: 1-3 minutes
 
-## 🔧 Eigene Wissensbasis
+## 🔧 Custom Knowledge Base
 
-### Neue Konversationen hinzufügen
+### Adding New Conversations
 
-Bearbeite `neuron_system/ai/conversation_knowledge.py`:
+Edit `neuron_system/ai/conversation_knowledge.py`:
 
 ```python
 DIRECT_QA = [
-    "Question: Deine Frage? Answer: Deine Antwort",
-    "Question: Wie geht es dir? Answer: Mir geht es gut!",
-    # ... mehr Q&A-Paare
+    "Question: Your question? Answer: Your answer",
+    "Question: How are you? Answer: I'm doing well!",
+    # ... more Q&A pairs
 ]
 ```
 
-Dann Update ausführen:
+Then run update:
 
 ```bash
-python cli.py update
+python cli.py learn "Your new knowledge" --tags category
 ```
 
-### Mehrsprachigkeit
+### Multilingual Support
 
-F.R.I.D.A.Y unterstützt mehrere Sprachen:
+F.R.I.D.A.Y supports multiple languages:
 
 ```python
-# Deutsch
+# German
 "Question: Was bist du? Answer: Ich bin ein KI-Assistent",
 
-# Englisch
+# English
 "Question: What are you? Answer: I'm an AI assistant",
 
-# Französisch
+# French
 "Question: Qu'est-ce que tu es? Answer: Je suis un assistant IA",
 ```
 
 ## 🎯 Use Cases
 
-### 1. Persönlicher Assistent
+### 1. Personal Assistant
 ```bash
 python cli.py chat
 ```
-Stelle Fragen, erhalte Informationen, lerne neue Dinge.
+Ask questions, get information, learn new things.
 
-### 2. Wissensdatenbank
+### 2. Knowledge Database
 ```bash
-# Eigenes Wissen hinzufügen
-python cli.py update
+# Add your own knowledge
+python cli.py learn "Your knowledge" --tags category
 ```
-Baue deine eigene spezialisierte Wissensbasis auf.
+Build your own specialized knowledge base.
 
-### 3. Chatbot-Backend
+### 3. Chatbot Backend
 ```python
 from neuron_system.ai.language_model import LanguageModel
 
-# In deiner Anwendung
+# In your application
 response = language_model.generate_response(user_input)
 ```
 
-### 4. Forschung & Experimente
+### 4. Research & Experiments
 ```bash
-# Verschiedene Konfigurationen testen
+# Test different configurations
 python cli.py train --database experiment1.db
 python cli.py train --database experiment2.db --with-datasets
 ```
 
-## 📚 Dokumentation
+## 📚 Documentation
 
-### Basis
-- [CLI Guide](CLI_GUIDE.md) - Detaillierte CLI-Dokumentation
-- [Quick Start](QUICKSTART.md) - Schnelleinstieg
+### Basics
+- [CLI Guide](CLI.md) - Detailed CLI documentation
+- [Features](FEATURES.md) - Complete feature documentation
+- [Changelog](CHANGELOG.md) - Version history
 
-### GPU-Beschleunigung
-- [Quick GPU Setup](QUICK_GPU_SETUP.md) - ⚡ Schnelle GPU-Installation
-- [INSTALL_CUDA.md](INSTALL_CUDA.md) - Detaillierte CUDA-Installation
-- [GPU Acceleration](GPU_ACCELERATION.md) - Vollständige GPU-Anleitung
-- [GPU Setup Summary](GPU_SETUP_SUMMARY.md) - Setup-Zusammenfassung
+### GPU Acceleration
+- [Quick GPU Setup](QUICK_GPU_SETUP.md) - ⚡ Fast GPU installation
+- [INSTALL_CUDA.md](INSTALL_CUDA.md) - Detailed CUDA installation
+- [GPU Acceleration](GPU_ACCELERATION.md) - Complete GPU guide
+- [GPU Setup Summary](GPU_SETUP_SUMMARY.md) - Setup summary
 
 ### Training
-- [Reddit Training](REDDIT_TRAINING.md) - Reddit-Dataset-Training
-- [Continuous Learning](CONTINUOUS_LEARNING.md) - Kontinuierliches Lernen
-- [Architecture](docs/ARCHITECTURE.md) - System-Architektur
-- [API Reference](docs/API.md) - API-Dokumentation
-- [Training Guide](docs/TRAINING.md) - Training-Strategien
+- [Reddit Training](REDDIT_TRAINING.md) - Reddit dataset training
+- [Continuous Learning](CONTINUOUS_LEARNING.md) - Continuous learning
+- [Architecture](docs/ARCHITECTURE.md) - System architecture
+- [API Reference](docs/API.md) - API documentation
+- [Training Guide](docs/TRAINING.md) - Training strategies
 
-## 🤝 Beitragen
+## 🤝 Contributing
 
-Beiträge sind willkommen! Hier sind einige Möglichkeiten:
+Contributions are welcome! Here are some ways to contribute:
 
-1. **Neue Konversationsdaten**: Füge Q&A-Paare hinzu
-2. **Bug-Fixes**: Melde oder behebe Bugs
-3. **Features**: Schlage neue Features vor
-4. **Dokumentation**: Verbessere die Docs
+1. **New Conversation Data**: Add Q&A pairs
+2. **Bug Fixes**: Report or fix bugs
+3. **Features**: Propose new features
+4. **Documentation**: Improve the docs
 
 ```bash
-# Fork das Repository
-# Erstelle einen Branch
-git checkout -b feature/neue-funktion
+# Fork the repository
+# Create a branch
+git checkout -b feature/new-feature
 
-# Committe deine Änderungen
-git commit -m "Füge neue Funktion hinzu"
+# Commit your changes
+git commit -m "Add new feature"
 
-# Push zum Branch
-git push origin feature/neue-funktion
+# Push to branch
+git push origin feature/new-feature
 
-# Erstelle einen Pull Request
+# Create a Pull Request
 ```
 
-## 🐛 Bekannte Probleme
+## 🐛 Known Issues
 
-- Einige Fragen matchen noch nicht perfekt mit Q&A-Paaren
-- Performance bei sehr großen Datenbanken (>100k Neuronen) kann langsamer werden
-- Antwort-Synthese kann manchmal zu kurz sein
+- Some questions don't match perfectly with Q&A pairs yet
+- Performance with very large databases (>100k neurons) can be slower
+- Response synthesis can sometimes be too short
 
-Siehe [Issues](https://github.com/yourusername/F.R.I.D.A.Y/issues) für aktuelle Probleme.
+See [Issues](https://github.com/yourusername/F.R.I.D.A.Y/issues) for current issues.
 
 ## 🗺️ Roadmap
 
-### Version 1.1 (Geplant)
-- [ ] Verbesserte Antwort-Synthese
-- [ ] Multi-Turn-Konversationen mit Kontext
-- [ ] Web-Interface
+### Version 1.1 (Planned)
+- [ ] Improved response synthesis
+- [ ] Multi-turn conversations with context
+- [ ] Web interface
 - [ ] REST API
 
-### Version 1.2 (Geplant)
-- [ ] Mehrsprachige Unterstützung (Deutsch, Französisch, Spanisch)
-- [ ] Langzeit-Gedächtnis
-- [ ] Personalisierung pro Benutzer
-- [ ] Voice-Interface
+### Version 1.2 (Planned)
+- [ ] Multilingual support (German, French, Spanish)
+- [ ] Long-term memory
+- [ ] Per-user personalization
+- [ ] Voice interface
 
-### Version 2.0 (Zukunft)
-- [ ] Verteiltes Training
-- [ ] Cloud-Deployment
-- [ ] Mobile Apps
-- [ ] Plugin-System
+### Version 2.0 (Future)
+- [ ] Distributed training
+- [ ] Cloud deployment
+- [ ] Mobile apps
+- [ ] Plugin system
 
-## 📄 Lizenz
+## 📄 License
 
-MIT License - siehe [LICENSE](LICENSE) für Details.
+MIT License - see [LICENSE](LICENSE) for details.
 
-## 🙏 Danksagungen
+## 🙏 Acknowledgments
 
-- **Sentence Transformers**: Für die Embedding-Modelle
-- **SQLite**: Für die robuste Datenbank
-- **HuggingFace**: Für die Datasets
-- **Community**: Für Feedback und Beiträge
+- **Sentence Transformers**: For the embedding models
+- **SQLite**: For the robust database
+- **HuggingFace**: For the datasets
+- **Community**: For feedback and contributions
 
-## 📞 Kontakt
+## 📞 Contact
 
 - **GitHub**: [yourusername/F.R.I.D.A.Y](https://github.com/yourusername/F.R.I.D.A.Y)
 - **Issues**: [Bug Reports & Feature Requests](https://github.com/yourusername/F.R.I.D.A.Y/issues)
@@ -341,7 +342,7 @@ MIT License - siehe [LICENSE](LICENSE) für Details.
 
 ## ⭐ Star History
 
-Wenn dir F.R.I.D.A.Y gefällt, gib dem Projekt einen Stern! ⭐
+If you like F.R.I.D.A.Y, give the project a star! ⭐
 
 ---
 
@@ -349,44 +350,69 @@ Wenn dir F.R.I.D.A.Y gefällt, gib dem Projekt einen Stern! ⭐
 
 *"Your friendly AI companion for everyday tasks"*
 
+## 📚 Documentation Overview
 
-## 📚 Dokumentation
+The project has 4 main documentation files:
 
-Das Projekt hat 4 Haupt-Dokumentationen:
-
-- **[CLI.md](CLI.md)** - Vollständiger CLI Guide mit allen Befehlen
-- **[FEATURES.md](FEATURES.md)** - Detaillierte Feature-Dokumentation
-- **[CHANGELOG.md](CHANGELOG.md)** - Versions-Historie und Updates
-- **[docs/](docs/)** - Zusätzliche Dokumentation
+- **[CLI.md](CLI.md)** - Complete CLI guide with all commands
+- **[FEATURES.md](FEATURES.md)** - Detailed feature documentation
+- **[CHANGELOG.md](CHANGELOG.md)** - Version history and updates
+- **[docs/](docs/)** - Additional documentation
 
 ### Quick Links
 - [Installation](#installation)
-- [Erste Schritte](#erste-schritte)
-- [CLI Befehle](CLI.md)
-- [Alle Features](FEATURES.md)
+- [First Steps](#first-steps)
+- [CLI Commands](CLI.md)
+- [All Features](FEATURES.md)
 - [Neural Inference](FEATURES.md#neural-inference-engine)
 - [Training System](FEATURES.md#training-system)
 - [API Documentation](FEATURES.md#api)
 
-## 📁 Projekt-Struktur
+## 📁 Project Structure
 
 ```
 F.R.I.D.A.Y/
-├── scripts/              # Utility-Scripts (Setup, Migration, Tests)
-├── data/                 # Datenbanken und Logs
-├── docs/                 # Dokumentation
-├── examples/             # Code-Beispiele
+├── scripts/              # Utility scripts (Setup, Migration, Tests)
+├── data/                 # Databases and logs
+├── docs/                 # Documentation
+├── examples/             # Code examples
 ├── tests/                # Tests
-├── neuron_system/        # Core Code
-│   ├── ai/              # AI Module (Training, Models, Inference)
-│   ├── core/            # Core Components (Neurons, Synapses, Graph)
+├── neuron_system/        # Core code
+│   ├── ai/              # AI modules (Training, Models, Inference)
+│   ├── core/            # Core components (Neurons, Synapses, Graph)
 │   ├── engines/         # Engines (Compression, Query, Training)
-│   ├── storage/         # Persistence Layer
-│   └── ...
-├── README.md            # Diese Datei
-├── CLI.md               # CLI Guide
-├── FEATURES.md          # Feature-Dokumentation
-├── CHANGELOG.md         # Versions-Historie
-├── cli.py               # Command Line Interface
+│   ├── storage/         # Persistence layer
+│   └── spatial/         # 3D spatial system
+├── README.md            # This file
+├── CLI.md               # CLI guide
+├── FEATURES.md          # Feature documentation
+├── CHANGELOG.md         # Version history
+├── cli.py               # Command line interface
 └── requirements.txt     # Dependencies
 ```
+
+## 🎮 CLI Commands Overview
+
+```bash
+# Training & Learning
+python cli.py train                    # Train the AI
+python cli.py learn "text" --tags ai  # Add knowledge
+
+# Interaction
+python cli.py chat                     # Interactive chat
+python cli.py query "What is AI?"      # Query the AI
+
+# System
+python cli.py stats                    # Show statistics
+python cli.py gpu-info                 # GPU information
+python cli.py list-datasets            # List available datasets
+
+# Validation
+python cli.py validate-persistence     # Test data persistence
+python cli.py validate-3d              # Test 3D system
+
+# Migration
+python cli.py migrate old.db new.db    # Migrate database
+```
+
+See [CLI.md](CLI.md) for complete command documentation.
