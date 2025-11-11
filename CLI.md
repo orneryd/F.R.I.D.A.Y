@@ -146,6 +146,23 @@ python cli.py cluster --method topics           # Topic-based clustering
 - `--eps` - DBSCAN epsilon parameter (default: 0.3)
 - `--min-samples` - DBSCAN min_samples (default: 3)
 
+### `view`
+Start high-performance 3D brain viewer.
+
+```bash
+python cli.py view
+python cli.py view --port 5001    # Custom port
+```
+
+**Features:**
+- WebGL-accelerated rendering
+- Can display 100K+ synapses smoothly
+- Real-time filtering
+- Interactive controls
+- Click neurons for details
+
+**Opens in browser:** http://localhost:5001
+
 ### `migrate`
 Migrate database to different dimension.
 
@@ -179,6 +196,7 @@ python cli.py --dimension 1024 train
 ```bash
 python cli.py train                    # Train the AI
 python cli.py query "What is AI?"      # Test it
+python cli.py view                     # View the brain in 3D
 python cli.py chat                     # Start chatting
 ```
 

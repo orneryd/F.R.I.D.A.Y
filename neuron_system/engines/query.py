@@ -97,7 +97,8 @@ class QueryEngine:
         top_k: int = 10,
         propagation_depth: int = 3,
         activation_threshold: float = 0.1,
-        use_cache: bool = True
+        use_cache: bool = True,
+        use_reasoning: bool = True
     ) -> List[ActivatedNeuron]:
         """
         Execute a semantic query to find relevant neurons.
@@ -164,6 +165,13 @@ class QueryEngine:
             if not activated_neurons:
                 logger.warning("No neurons exceeded activation threshold")
                 return []
+            
+            # Optional: apply lightweight reasoning bias before propagation
+            if use_reasoning:
+                activated_neurons = self._apply_reasoning_bias(
+                    query_text=query_text,
+                    activated_neurons=activated_neurons
+                )
             
             # Step 4: Propagate activation through synapses
             # This will be implemented in activation.py (subtask 5.2)
@@ -307,6 +315,61 @@ class QueryEngine:
         
         # Clamp to [-1, 1] to handle floating point errors
         return np.clip(similarity, -1.0, 1.0)
+    
+    def _apply_reasoning_bias(
+        self,
+        query_text: str,
+        activated_neurons: List[ActivatedNeuron]
+    ) -> List[ActivatedNeuron]:
+        """
+        Lightweight, fast biasing towards reasoning-related neurons.
+        
+        - Detect reasoning intent via simple keywords (lower overhead than models)
+        - Boost activation for neurons tagged with reasoning-related semantics
+        - Keep computation O(n) over already-activated candidates
+        """
+        try:
+            q = (query_text or "").lower()
+            # Heuristic keywords for reasoning-style queries
+            reasoning_keywords = (
+                "why", "how", "explain", "because", "reason", "cause",
+                "derive", "prove", "analyze", "compare", "contrast",
+                "what if", "suppose", "assume", "deduce", "infer", "logic"
+            )
+            needs_reasoning = any(k in q for k in reasoning_keywords)
+            if not needs_reasoning:
+                return activated_neurons
+            
+            # Apply a gentle boost to neurons carrying reasoning-like tags
+            reasoning_tags = {
+                "reasoning", "logic", "analysis", "problem-solving",
+                "math", "deduction", "induction", "critical", "abstract"
+            }
+            boosted: List[ActivatedNeuron] = []
+            for an in activated_neurons:
+                neuron = an.neuron
+                tags = set(getattr(neuron, "semantic_tags", []) or [])
+                if tags & reasoning_tags:
+                    # 20% boost, capped to 1.0 to preserve score semantics
+                    new_activation = min(1.0, an.activation * 1.2)
+                    boosted.append(
+                        ActivatedNeuron(
+                            neuron=an.neuron,
+                            activation=new_activation,
+                            distance=an.distance,
+                            similarity=an.similarity,
+                            metadata={**(an.metadata or {}), "reasoning_boost": True}
+                        )
+                    )
+                else:
+                    boosted.append(an)
+            
+            # Re-sort by activation so boosted items float up
+            boosted.sort(reverse=True)
+            return boosted
+        except Exception:
+            # On any unexpected issue, fail safe and return original list
+            return activated_neurons
     
     def _get_from_cache(self, key: str) -> Optional[List[ActivatedNeuron]]:
         """

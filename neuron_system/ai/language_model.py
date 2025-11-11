@@ -35,7 +35,8 @@ class LanguageModel:
         compression_engine: CompressionEngine,
         query_engine: QueryEngine,
         training_engine: TrainingEngine,
-        enable_self_training: bool = True
+        enable_self_training: bool = True,
+        enable_logic_engine: bool = True
     ):
         """
         Initialize the language model.
@@ -46,11 +47,24 @@ class LanguageModel:
             query_engine: Query engine for retrieval
             training_engine: Training engine for learning
             enable_self_training: Enable continuous self-training
+            enable_logic_engine: Enable logic execution from assimilated models
         """
         self.graph = graph
         self.compression_engine = compression_engine
         self.query_engine = query_engine
         self.training_engine = training_engine
+        
+        # Initialize logic engine for executing assimilated logic
+        if enable_logic_engine:
+            from neuron_system.ai.logic_engine import LogicEngine
+            self._logic_engine = LogicEngine(graph, query_engine)
+            stats = self._logic_engine.get_logic_stats()
+            if stats['total_rules'] > 0:
+                logger.info(f"Logic engine initialized with {stats['total_rules']} rules")
+            else:
+                logger.info("Logic engine initialized (no rules yet - assimilate models to add logic)")
+        else:
+            self._logic_engine = None
         
         # Initialize self-training
         if enable_self_training:
@@ -95,7 +109,12 @@ class LanguageModel:
         context_size: int = 5,
         min_activation: float = 0.3,
         propagation_depth: int = 0,
-        use_reasoning: bool = True
+        use_reasoning: bool = True,
+        use_generative: bool = True,
+        use_chain_of_thought: bool = True,
+        use_self_reflection: bool = True,
+        store_reasoning_trace: bool = True,
+        output_think_tags: bool = True
     ) -> str:
         """
         Generate a response to a query using activated neurons.
@@ -106,12 +125,21 @@ class LanguageModel:
             min_activation: Minimum activation threshold
             propagation_depth: Depth of activation propagation (0 = no propagation)
             use_reasoning: Whether to use reasoning neurons to improve response
+            use_generative: Whether to use generative model (learns and creates new responses)
+            use_chain_of_thought: Whether to create a lightweight CoT reasoning trace
+            use_self_reflection: Whether to validate/improve with self-reflection
+            store_reasoning_trace: Whether to persist the reasoning trace as memory
+            output_think_tags: Whether to include <think>...</think> CoT block before final answer
             
         Returns:
             Generated response text
         """
         logger.info(f"Generating response for: '{query[:50]}...'")
         
+        # DISABLED: ImprovedGenerator - we use GenerativeSynthesizer instead
+        # The ImprovedGenerator only returns stored text, not generated responses
+        
+        # Original method (fallback)
         # Find relevant neurons (without propagation for more accurate results)
         results = self.understand(query, top_k=context_size, propagation_depth=propagation_depth)
         
@@ -126,6 +154,7 @@ class LanguageModel:
         
         # Extract knowledge from top neurons
         knowledge_pieces = []
+        used_neuron_ids = []
         for result in relevant_results[:context_size]:
             neuron = result.neuron
             if hasattr(neuron, 'source_data') and neuron.source_data:
@@ -134,23 +163,95 @@ class LanguageModel:
                     'activation': result.activation,
                     'tags': getattr(neuron, 'semantic_tags', [])
                 })
+                used_neuron_ids.append(str(getattr(neuron, "id", "")))
+        
+        # Optional: build a lightweight Chain-of-Thought trace (no recursion)
+        reasoning_steps = []
+        if use_chain_of_thought:
+            ql = (query or "").lower()
+            # Step 1: restate the problem
+            reasoning_steps.append(f"Understand: {query}")
+            # Step 2: classify the question intent
+            if any(w in ql for w in ['why', 'because', 'reason']):
+                reasoning_steps.append("Type: causal explanation")
+            elif any(w in ql for w in ['how', 'process', 'method', 'steps']):
+                reasoning_steps.append("Type: procedural steps")
+            elif any(w in ql for w in ['compare', 'difference', 'similar']):
+                reasoning_steps.append("Type: comparison/contrast")
+            elif any(w in ql for w in ['what', 'define', 'explain']):
+                reasoning_steps.append("Type: definitional/explanatory")
+            else:
+                reasoning_steps.append("Type: general informative")
+            # Step 3: evidence plan
+            reasoning_steps.append("Plan: select top relevant knowledge, check consistency, synthesize concise answer")
         
         # Apply reasoning if enabled
         if use_reasoning:
             knowledge_pieces = self._apply_reasoning(query, knowledge_pieces)
         
         # Generate response based on activated knowledge
-        response = self._synthesize_response(query, knowledge_pieces)
+        # Try logic engine first if available (uses assimilated logic)
+        if self._logic_engine and self._logic_engine.get_logic_stats()['total_rules'] > 0:
+            try:
+                response = self._logic_engine.generate_with_logic(query, knowledge_pieces)
+                if response and len(response) > 10:
+                    logger.info("Using logic engine (assimilated logic)")
+                else:
+                    response = self._synthesize_response(query, knowledge_pieces)
+            except Exception as e:
+                logger.debug(f"Logic engine failed, using fallback: {e}")
+                response = self._synthesize_response(query, knowledge_pieces)
+        else:
+            response = self._synthesize_response(query, knowledge_pieces)
         
-        # Apply self-reflection to validate and improve response
-        # DISABLED during training - it's too strict and marks good responses as bad
-        # response = self._self_reflect(query, response, knowledge_pieces)
+        # Apply self-reflection to validate and improve response (lenient)
+        if use_self_reflection:
+            response = self._self_reflect(query, response, knowledge_pieces)
+        
+        # Format output with <think>...</think> if requested
+        if output_think_tags and use_chain_of_thought:
+            try:
+                think_block = ""
+                if reasoning_steps:
+                    # Join steps into a single block; keep short and readable
+                    think_block = "<think>\n" + "\n".join(reasoning_steps) + "\n</think>\n"
+                if think_block:
+                    response = f"{think_block}{response}"
+            except Exception as e:
+                logger.debug(f"Formatting think tags failed: {e}")
         
         # Apply self-training (learn from this interaction)
         if self._continuous_learning:
             self._continuous_learning.process_interaction(
                 query, response, relevant_results, user_feedback=None
             )
+        
+        # Optionally store reasoning trace as a memory for transparency/audit
+        if store_reasoning_trace and (use_chain_of_thought or use_self_reflection):
+            try:
+                from neuron_system.neuron_types.memory_neuron import MemoryManager
+                if not hasattr(self, '_memory_manager'):
+                    self._memory_manager = MemoryManager(self.graph, self.compression_engine)
+                
+                trace_lines = []
+                if reasoning_steps:
+                    trace_lines.append("ChainOfThought:")
+                    trace_lines.extend([f"- {s}" for s in reasoning_steps])
+                trace_lines.append("Answer: " + response)
+                trace_lines.append("UsedNeurons: " + ", ".join(used_neuron_ids[:10]))
+                
+                trace_text = "\n".join(trace_lines)
+                self._memory_manager.create_memory(
+                    content=trace_text,
+                    memory_type="episodic",
+                    context={
+                        "query": query,
+                        "used_neurons": used_neuron_ids,
+                    },
+                    importance=0.6
+                )
+            except Exception as e:
+                logger.debug(f"Storing reasoning trace failed: {e}")
         
         logger.info(f"Generated response: '{response[:50]}...'")
         return response
@@ -256,7 +357,7 @@ class LanguageModel:
         knowledge_pieces: List[Dict[str, Any]]
     ) -> str:
         """
-        Synthesize a response from knowledge pieces.
+        Synthesize a response from knowledge pieces using intelligent synthesis.
         
         Args:
             query: Original query
@@ -268,6 +369,60 @@ class LanguageModel:
         if not knowledge_pieces:
             return "I don't have relevant information to answer that."
         
+        # Try generative synthesis first (creates original sentences)
+        try:
+            from neuron_system.ai.generative_synthesis import GenerativeSynthesizer
+            
+            if not hasattr(self, '_generative_synthesizer'):
+                self._generative_synthesizer = GenerativeSynthesizer(model_type="auto")
+            
+            response = self._generative_synthesizer.synthesize_response(
+                query, knowledge_pieces, max_length=150
+            )
+            
+            if response and len(response) > 10:
+                logger.info("Using generative synthesis")
+                return response
+            
+        except Exception as e:
+            logger.warning(f"Generative synthesis failed: {e}")
+        
+        # Fallback to intelligent synthesizer
+        try:
+            from neuron_system.ai.intelligent_synthesis import IntelligentSynthesizer
+            
+            if not hasattr(self, '_synthesizer'):
+                self._synthesizer = IntelligentSynthesizer()
+            
+            response = self._synthesizer.synthesize_response(
+                query, knowledge_pieces, min_confidence=0.3
+            )
+            
+            return response
+            
+        except Exception as e:
+            logger.warning(f"Intelligent synthesis failed, using fallback: {e}")
+            # Fallback to simple synthesis
+            return self._simple_synthesis(query, knowledge_pieces)
+    
+    def _simple_synthesis(
+        self,
+        query: str,
+        knowledge_pieces: List[Dict[str, Any]]
+    ) -> str:
+        """
+        Simple fallback synthesis method.
+        
+        WICHTIG: Nimmt NUR die beste Antwort, kombiniert NICHTS!
+        Alle Überlegungen gehören ins Reasoning, nicht in die finale Antwort.
+        
+        Args:
+            query: Original query
+            knowledge_pieces: List of relevant knowledge with activations
+            
+        Returns:
+            Single, clean synthesized response
+        """
         # Sort by activation
         sorted_knowledge = sorted(
             knowledge_pieces,
@@ -275,91 +430,98 @@ class LanguageModel:
             reverse=True
         )
         
-        # PRIORITIZE Q&A format responses - scan ALL responses first
-        qa_responses = []
-        other_responses = []
+        # Extract ONLY the best answer - NO COMBINATION
+        best_answer = None
         
         for piece in sorted_knowledge:
             text = piece['text'].strip()
-            is_qa = "Question:" in text and "Answer:" in text
             
-            if is_qa:
-                # Extract just the answer part
-                answer_start = text.find("Answer:") + 7
-                extracted_text = text[answer_start:].strip()
-                qa_responses.append((extracted_text, piece['activation'], text))
-            else:
-                other_responses.append((text, piece['activation']))
-        
-        # Prefer Q&A responses if available (they are more direct and accurate)
-        filtered_texts = []
-        
-        # First, try to find a good Q&A response
-        for text, activation, full_text in qa_responses:
-            # Skip if too short
-            if len(text) < 10:
-                continue
-            
-            # Skip if it's just a section header
-            if text.startswith('='):
-                continue
-            
-            # Skip if it's just numbers or symbols
-            if not any(c.isalpha() for c in text):
-                continue
-            
-            # Skip meta-instructions (like "When asked...")
-            if "When asked" in full_text or "means asking" in full_text or "means requesting" in full_text:
-                continue
-            
-            # Found a good Q&A response - use it!
-            filtered_texts.append(text)
-            break
-        
-        # If no good Q&A responses found, use other responses
-        if not filtered_texts:
-            for text, activation in other_responses:
-                # Skip if too short
-                if len(text) < 15:
-                    continue
-                
-                # Skip if it's just a section header
-                if text.startswith('=') or (len(text) < 50 and text.isupper()):
-                    continue
-                
-                # Skip if it's just numbers or symbols
-                if not any(c.isalpha() for c in text):
-                    continue
-                
-                # Skip meta-instructions
-                if "When asked" in text or "When someone" in text or "means asking" in text:
-                    continue
-                
-                filtered_texts.append(text)
-                
-                # Stop after we have 3 good pieces
-                if len(filtered_texts) >= 3:
-                    break
-        
-        # If no good texts found, return the top result anyway
-        if not filtered_texts:
-            text = sorted_knowledge[0]['text']
-            # Try to extract answer from Q&A format
+            # Try Q&A format - extract only the answer part
             if "Answer:" in text:
                 answer_start = text.find("Answer:") + 7
-                text = text[answer_start:].strip()
-            return text
+                answer = text[answer_start:].strip()
+                
+                if len(answer) > 10:
+                    best_answer = answer
+                    break
+            
+            # Use full text if good enough
+            if len(text) > 15 and any(c.isalpha() for c in text):
+                best_answer = text
+                break
         
-        # Return the most relevant piece (or combine if multiple)
-        if len(filtered_texts) == 1:
-            return filtered_texts[0]
-        elif len(filtered_texts) == 2:
-            # Combine with a natural connector
-            return f"{filtered_texts[0]} Additionally, {filtered_texts[1].lower() if filtered_texts[1][0].isupper() else filtered_texts[1]}"
-        else:
-            # For 3+ results, return just the most relevant one
-            # (to avoid overly long responses)
-            return filtered_texts[0]
+        # If no answer found, use first piece
+        if not best_answer:
+            best_answer = sorted_knowledge[0]['text']
+        
+        # ALWAYS clean the final answer before returning
+        return self._clean_final_answer(best_answer)
+    
+    def _clean_final_answer(self, answer: str) -> str:
+        """
+        Bereinigt die finale Antwort von Meta-Kommentaren und Zusätzen.
+        
+        Entfernt:
+        - "Zusätzlich:", "Additionally:", etc.
+        - "Based on", "According to", etc.
+        - Mehrfache Sätze die das gleiche sagen
+        - Technische Artefakte
+        
+        Args:
+            answer: Rohe Antwort
+            
+        Returns:
+            Bereinigte, fokussierte Antwort
+        """
+        import re
+        
+        # Entferne Meta-Phrasen am Anfang
+        meta_phrases = [
+            r'^Based on[^,\.]+[,\.]?\s*',
+            r'^According to[^,\.]+[,\.]?\s*',
+            r'^In my (opinion|view|analysis)[,\.]?\s*',
+            r'^I (think|believe|found) (that\s+)?',
+            r'^As (mentioned|noted|stated)[^,\.]+[,\.]?\s*',
+        ]
+        
+        for pattern in meta_phrases:
+            answer = re.sub(pattern, '', answer, flags=re.IGNORECASE)
+        
+        # Entferne "Zusätzlich:" und ähnliche Marker
+        # Das ist das Hauptproblem!
+        # WICHTIG: Auch mit Encoding-Problemen (ä vs õ)
+        answer = re.sub(r'\.\s*Zus[aäõ]tzlich:\s*', '. ', answer, flags=re.IGNORECASE)
+        answer = re.sub(r'\.\s*Additionally:\s*', '. ', answer, flags=re.IGNORECASE)
+        answer = re.sub(r'\.\s*Furthermore:\s*', '. ', answer, flags=re.IGNORECASE)
+        answer = re.sub(r'\.\s*Moreover:\s*', '. ', answer, flags=re.IGNORECASE)
+        answer = re.sub(r'\.\s*Also:\s*', '. ', answer, flags=re.IGNORECASE)
+        
+        # Wenn nach "Zusätzlich:" ein zweiter Satz kommt, nimm NUR den ersten
+        # Beispiel: "Satz 1. Zusätzlich: Satz 2" -> "Satz 1"
+        if re.search(r'\.\s*(Zus[aäõ]tzlich|Additionally|Furthermore|Moreover|Also):', answer, re.IGNORECASE):
+            # Nimm nur den Teil vor dem Marker
+            parts = re.split(r'\.\s*(Zus[aäõ]tzlich|Additionally|Furthermore|Moreover|Also):', answer, maxsplit=1, flags=re.IGNORECASE)
+            if parts and len(parts[0]) > 10:
+                answer = parts[0] + '.'
+        
+        # Entferne doppelte Punkte
+        answer = re.sub(r'\.\.+', '.', answer)
+        
+        # Entferne technische Artefakte
+        answer = re.sub(r'@-@', '', answer)
+        answer = re.sub(r'< unk >', '', answer)
+        
+        # Entferne mehrfache Leerzeichen
+        answer = re.sub(r'\s+', ' ', answer)
+        
+        # Trim
+        answer = answer.strip()
+        
+        # Stelle sicher dass Satz mit Punkt endet
+        if answer and not answer[-1] in '.!?':
+            answer += '.'
+        
+        return answer
     
     def learn(
         self,
@@ -411,6 +573,62 @@ class LanguageModel:
         
         logger.info(f"Learned new knowledge with neuron ID: {neuron.id}")
         return neuron.id
+    
+    def learn_batch(
+        self,
+        texts: List[str],
+        tags_list: Optional[List[List[str]]] = None,
+        create_connections: bool = False
+    ) -> List[UUID]:
+        """
+        Learn multiple knowledge pieces in batch (much faster).
+        
+        Args:
+            texts: List of texts to learn
+            tags_list: List of tag lists for each text
+            create_connections: Whether to create synapses
+            
+        Returns:
+            List of created neuron IDs
+        """
+        logger.info(f"Batch learning {len(texts)} knowledge pieces...")
+        
+        if tags_list is None:
+            tags_list = [None] * len(texts)
+        
+        neuron_ids = []
+        neurons_to_add = []
+        
+        # Create all neurons first (without saving)
+        for text, tags in zip(texts, tags_list):
+            # Compress text to vector
+            vector, metadata = self.compression_engine.compress(text)
+            
+            # Auto-generate position
+            position = self._generate_position(tags=tags)
+            
+            # Create knowledge neuron
+            neuron = KnowledgeNeuron(
+                source_data=text,
+                compression_ratio=len(text) / len(vector),
+                semantic_tags=tags or []
+            )
+            
+            neuron.position = position
+            neuron.vector = np.asarray(vector) if not isinstance(vector, np.ndarray) else vector
+            
+            neurons_to_add.append(neuron)
+            neuron_ids.append(neuron.id)
+        
+        # Add all neurons at once
+        for neuron in neurons_to_add:
+            self.graph.add_neuron(neuron)
+        
+        # Save once at the end
+        self.graph.save()
+        
+        logger.info(f"Batch learned {len(neuron_ids)} neurons")
+        return neuron_ids
     
     def _generate_position(self, tags: Optional[List[str]] = None) -> Vector3D:
         """

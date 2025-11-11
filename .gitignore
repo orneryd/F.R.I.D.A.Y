@@ -1,4 +1,9 @@
+# ============================================================================
+# F.R.I.D.A.Y AI - .gitignore
+# ============================================================================
+
 # Python
+# -------
 __pycache__/
 *.py[cod]
 *$py.class
@@ -16,67 +21,226 @@ parts/
 sdist/
 var/
 wheels/
+pip-wheel-metadata/
+share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+MANIFEST
 
-# Virtual Environment
+# Virtual Environments
+# --------------------
 .venv/
 venv/
 ENV/
 env/
+.virtualenv/
 
-# IDE
+# UV Package Manager
+# ------------------
+# Keep uv.lock for reproducible builds
+# .python-version is optional
+
+# IDE & Editors
+# --------------
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
+.project
+.pydevproject
+.settings/
+*.sublime-project
+*.sublime-workspace
 
-# Testing
+# Testing & Coverage
+# ------------------
 .pytest_cache/
 .coverage
+.coverage.*
 htmlcov/
 .tox/
 .hypothesis/
+.nox/
+coverage.xml
+*.cover
+.cache
+nosetests.xml
 
-# Database files
+# Type Checking
+# -------------
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
+
+# Database Files
+# --------------
 *.db
 *.db-journal
 *.db-shm
 *.db-wal
+*.sqlite
+*.sqlite3
+
+# Keep example/template databases
+!example_*.db
+!template_*.db
+
+# Data Directory
+# --------------
+data/*.db
+data/*.log
+data/backups/
+data/exports/
+data/temp/
 
 # Logs
+# ----
 *.log
+logs/
 neuron_system_audit.log
+*.log.*
 
-# Exports
+# Models & Weights
+# ----------------
+models/
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.bin
+*.h5
+*.pkl
+*.pickle
+
+# Keep model configs
+!models/*.json
+!models/*.yaml
+!models/*.yml
+
+# Exports & Backups
+# -----------------
 neuron_system_export.json
-example_neuron_system.db
-
-# Backups
 backups/
+exports/
+*.backup
+*.bak
 
-# OS
-.DS_Store
-Thumbs.db
-
-# Kiro (keep the specs)
-.kiro/settings/
-.kiro/cache/
-
-
-# Data directory
-*.db
-*.db-shm
-*.db-wal
-*.log
-
-# Test archives
-tests/archive/
-
-# Temporary files
+# Temporary Files
+# ---------------
 *.tmp
 *.temp
+*.swp
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Example & Test Files
+# --------------------
 example_*.py
+test_output/
+tests/archive/
 *_config.py
+scratch/
+playground/
+
+# Documentation Build
+# -------------------
+docs/_build/
+docs/.doctrees/
+site/
+
+# Jupyter Notebooks
+# -----------------
+.ipynb_checkpoints/
+*.ipynb
+
+# Environment Variables
+# ---------------------
+.env
+.env.local
+.env.*.local
+*.env
+
+# OS Specific
+# -----------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# Kiro IDE
+# --------
+.kiro/settings/
+.kiro/cache/
+# Keep specs
+!.kiro/specs/
+
+# Flask/Web
+# ---------
+instance/
+.webassets-cache
+.flask_session/
+
+# Profiling
+# ---------
+*.prof
+*.lprof
+.prof/
+
+# Compiled Files
+# --------------
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.so
+
+# Archives
+# --------
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+
+# Keep documentation archives
+!docs/*.zip
+!docs/*.tar.gz
+
+# ============================================================================
+# Project Specific
+# ============================================================================
+
+# HuggingFace Cache (optional - can be large)
+# Uncomment if you want to ignore HF cache
+# .cache/huggingface/
+
+# PyTorch Hub Cache (optional)
+# Uncomment if you want to ignore torch cache
+# .cache/torch/
+
+# Temporary Brain Data
+# --------------------
+debug_brain_data.json
+friday_brain.html
+neuron_system.db
+
+# Keep main database in data/
+!data/neuron_system.db
+
+# ============================================================================
+# End of .gitignore
+# ============================================================================

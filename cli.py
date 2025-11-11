@@ -1,20 +1,231 @@
 """
 F.R.I.D.A.Y AI - Command Line Interface
 
-Modernes CLI mit Dimension-Support und allen Features.
+Modernes CLI mit Farben, Icons und besserer UX.
 """
 
 import argparse
 import sys
-import logging
 from pathlib import Path
 
-# Setup logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(message)s'
-)
-logger = logging.getLogger(__name__)
+try:
+    from rich.console import Console
+    from rich.panel import Panel
+    from rich.table import Table
+    from rich.progress import Progress, SpinnerColumn, TextColumn
+    from rich import print as rprint
+    RICH_AVAILABLE = True
+except ImportError:
+    RICH_AVAILABLE = False
+    print("Tip: Install 'rich' for better CLI experience: pip install rich")
+
+# Console setup
+console = Console() if RICH_AVAILABLE else None
+
+def print_header(title: str, subtitle: str = ""):
+    """Print a nice header."""
+    if RICH_AVAILABLE:
+        panel = Panel(
+            f"[bold cyan]{title}[/bold cyan]\n[dim]{subtitle}[/dim]" if subtitle else f"[bold cyan]{title}[/bold cyan]",
+            border_style="cyan",
+            padding=(1, 2)
+        )
+        console.print(panel)
+    else:
+        print(f"\n{'='*60}")
+        print(f"  {title}")
+        if subtitle:
+            print(f"  {subtitle}")
+        print(f"{'='*60}\n")
+
+def print_success(message: str):
+    """Print success message."""
+    if RICH_AVAILABLE:
+        console.print(f"[green]✓[/green] {message}")
+    else:
+        print(f"✓ {message}")
+
+def print_error(message: str):
+    """Print error message."""
+    if RICH_AVAILABLE:
+        console.print(f"[red]✗[/red] {message}")
+    else:
+        print(f"✗ {message}")
+
+def print_info(message: str):
+    """Print info message."""
+    if RICH_AVAILABLE:
+        console.print(f"[blue]ℹ[/blue] {message}")
+    else:
+        print(f"ℹ {message}")
+
+def print_help():
+    """Print custom help message."""
+    global RICH_AVAILABLE
+    
+    if RICH_AVAILABLE:
+        try:
+            from rich.markdown import Markdown
+            
+            help_text = """
+# F.R.I.D.A.Y AI - Command Line Interface
+
+**Version:** 2.3.0  
+**Python:** 3.12+
+
+## 🚀 Quick Start
+
+```bash
+# View brain in 3D
+python cli.py view
+
+# Train with dataset
+python cli.py train
+
+# Chat with F.R.I.D.A.Y
+python cli.py chat
+
+# Show statistics
+python cli.py stats
+```
+
+## 📋 Commands
+
+### Core Commands
+- **view** - Start 3D brain viewer (WebGL)
+- **train** - Train F.R.I.D.A.Y with datasets
+- **chat** - Interactive conversation mode
+- **stats** - Show brain statistics
+
+### Data Commands
+- **learn** - Add single knowledge item
+- **query** - Query the brain
+
+### System Commands
+- **gpu-info** - Show GPU/hardware info
+- **list-datasets** - List available datasets
+- **validate-3d** - Validate 3D system
+- **cluster** - Cluster neurons
+
+## ⚙️ Global Options
+
+- **--database, -db** - Database path (default: data/neuron_system.db)
+- **--dimension, -d** - Vector dimension: auto, 384, 768, 1024 (default: auto)
+
+## 📖 Examples
+
+```bash
+# Start 3D viewer on custom port
+python cli.py view --port 5001
+
+# Train with specific dataset
+python cli.py train --dataset conversations
+
+# Chat with neural inference
+python cli.py chat --neural
+
+# Query with more results
+python cli.py query "What is AI?" --top-k 10
+
+# Show stats for 768D database
+python cli.py --dimension 768 --database brain_768d.db stats
+```
+
+## 💡 Tips
+
+- Use **view** for visual training monitoring
+- Use **--neural** for better quality responses
+- Use **768D** for production (better quality)
+- Use **384D** for development (faster)
+
+## 📚 Documentation
+
+- **README.md** - Getting started
+- **CLI.md** - Complete CLI reference
+- **FEATURES.md** - All features
+- **UV_SETUP.md** - UV installation guide
+
+## ⚠️ Experimental Features
+
+**Assimilation System** - Currently in development
+- Advanced knowledge extraction and integration
+- Available in `scripts/assimilate.py` for testing
+- Will be integrated into CLI when stable
+
+## 🔗 Links
+
+- GitHub: https://github.com/OpenChatGit/F.R.I.D.A.Y
+- Docs: See README.md
+
+---
+
+For command-specific help: `python cli.py <command> --help`
+"""
+            console.print(Markdown(help_text))
+        except Exception:
+            # Fallback if Rich has issues
+            RICH_AVAILABLE = False
+    
+    if not RICH_AVAILABLE:
+        print("""
+F.R.I.D.A.Y AI - Command Line Interface
+========================================
+
+Version: 2.3.0
+Python: 3.12+
+
+QUICK START
+-----------
+  python cli.py view          # View brain in 3D
+  python cli.py train         # Train with dataset
+  python cli.py chat          # Chat with F.R.I.D.A.Y
+  python cli.py stats         # Show statistics
+
+COMMANDS
+--------
+Core Commands:
+  view                        Start 3D brain viewer (WebGL)
+  train                       Train F.R.I.D.A.Y with datasets
+  chat                        Interactive conversation mode
+  stats                       Show brain statistics
+
+Data Commands:
+  learn                       Add single knowledge item
+  query                       Query the brain
+
+System Commands:
+  gpu-info                    Show GPU/hardware info
+  list-datasets               List available datasets
+  validate-3d                 Validate 3D system
+  cluster                     Cluster neurons
+
+GLOBAL OPTIONS
+--------------
+  --database, -db PATH        Database path (default: data/neuron_system.db)
+  --dimension, -d DIM         Vector dimension: auto, 384, 768, 1024
+
+EXAMPLES
+--------
+  python cli.py view --port 5001
+  python cli.py train --dataset conversations
+  python cli.py chat --neural
+  python cli.py query "What is AI?" --top-k 10
+
+DOCUMENTATION
+-------------
+  README.md                   Getting started
+  CLI.md                      Complete CLI reference
+  FEATURES.md                 All features
+  UV_SETUP.md                 UV installation guide
+
+EXPERIMENTAL FEATURES
+---------------------
+  Assimilation System         Currently in development
+                              Available in scripts/assimilate.py
+                              Will be integrated into CLI when stable
+
+For command-specific help: python cli.py <command> --help
+""")
 
 
 def get_model_config(dimension: str = 'auto'):
@@ -69,8 +280,8 @@ def init_system(database: str, dimension: str = 'auto', use_neural: bool = False
     # Get model config
     sentence_model, pretrained_model, expected_dim = get_model_config(dimension)
     
-    logger.info(f"Initializing system with {expected_dim}D...")
-    logger.info(f"Model: {sentence_model}")
+    print_info(f"Initializing system with {expected_dim}D...")
+    print_info(f"Model: {sentence_model}")
     
     # Initialize components
     db_manager = DatabaseManager(database)
@@ -84,9 +295,9 @@ def init_system(database: str, dimension: str = 'auto', use_neural: bool = False
     # Load existing data
     try:
         graph.load()
-        logger.info(f"Loaded {len(graph.neurons)} neurons from database")
+        print_success(f"Loaded {len(graph.neurons)} neurons from database")
     except Exception as e:
-        logger.debug(f"No existing data: {e}")
+        pass  # No existing data
     
     # Initialize language model
     if use_neural:
@@ -97,7 +308,7 @@ def init_system(database: str, dimension: str = 'auto', use_neural: bool = False
                 pretrained_model=pretrained_model,
                 enable_self_training=True
             )
-            logger.info("Neural Inference enabled")
+            print_success("Neural Inference enabled")
         except Exception as e:
             logger.warning(f"Neural Inference not available: {e}")
             from neuron_system.ai.language_model import LanguageModel
@@ -129,9 +340,7 @@ def init_system(database: str, dimension: str = 'auto', use_neural: bool = False
 
 def cmd_train(args):
     """Train the AI with dataset."""
-    logger.info("=" * 70)
-    logger.info("TRAINING")
-    logger.info("=" * 70)
+    print_header("TRAINING", "Train F.R.I.D.A.Y with knowledge")
     
     graph, _, _, _, language_model = init_system(args.database, args.dimension)
     
@@ -207,15 +416,19 @@ def cmd_train(args):
 
 def cmd_chat(args):
     """Interactive chat with the AI."""
-    logger.info("=" * 70)
-    logger.info("CHAT MODE")
-    logger.info("=" * 70)
+    import re
+    
+    print_header("CHAT MODE", "Interactive conversation with F.R.I.D.A.Y")
     logger.info("Commands: 'exit' to quit, 'stats' for statistics")
+    logger.info("Chain-of-Thought reasoning is enabled by default")
     logger.info("")
     
     _, _, _, _, language_model = init_system(
         args.database, args.dimension, args.neural
     )
+    
+    # Enable CoT by default
+    use_cot = True
     
     while True:
         try:
@@ -237,14 +450,49 @@ def cmd_chat(args):
                 logger.info("")
                 continue
             
-            # Generate response
+            if user_input.lower() == 'cot on':
+                use_cot = True
+                logger.info("Chain-of-Thought reasoning enabled")
+                logger.info("")
+                continue
+            
+            if user_input.lower() == 'cot off':
+                use_cot = False
+                logger.info("Chain-of-Thought reasoning disabled")
+                logger.info("")
+                continue
+            
+            # Generate response with CoT
             response = language_model.generate_response(
                 user_input,
                 context_size=args.context_size,
-                use_neural_inference=args.neural
+                use_reasoning=True,
+                use_generative=False,  # Use original method to show CoT
+                use_chain_of_thought=use_cot,
+                use_self_reflection=True,
+                output_think_tags=use_cot
             )
             
-            logger.info(f"AI: {response}")
+            # Parse and display reasoning separately
+            if use_cot and '<think>' in response and '</think>' in response:
+                # Split reasoning and answer
+                parts = re.split(r'</think>\s*', response, maxsplit=1)
+                if len(parts) == 2:
+                    reasoning = parts[0].replace('<think>', '').strip()
+                    answer = parts[1].strip()
+                    
+                    # Display reasoning in gray/dim
+                    logger.info("\n[Reasoning]")
+                    for line in reasoning.split('\n'):
+                        logger.info(f"  {line}")
+                    
+                    # Display answer
+                    logger.info("\nAI: " + answer)
+                else:
+                    logger.info(f"AI: {response}")
+            else:
+                logger.info(f"AI: {response}")
+            
             logger.info("")
             
         except KeyboardInterrupt:
@@ -292,8 +540,7 @@ def cmd_query(args):
     
     response = language_model.generate_response(
         args.query,
-        context_size=args.top_k,
-        use_neural_inference=args.neural
+        context_size=args.top_k
     )
     
     logger.info(f"Response: {response}")
@@ -301,9 +548,7 @@ def cmd_query(args):
 
 def cmd_stats(args):
     """Show system statistics."""
-    logger.info("=" * 70)
-    logger.info("STATISTICS")
-    logger.info("=" * 70)
+    print_header("STATISTICS", "F.R.I.D.A.Y Brain Status")
     
     graph, compression_engine, _, _, language_model = init_system(
         args.database, args.dimension
@@ -311,23 +556,38 @@ def cmd_stats(args):
     
     stats = language_model.get_statistics()
     
-    logger.info(f"Database: {args.database}")
-    logger.info(f"Dimension: {compression_engine.vector_dim}D")
-    logger.info("")
-    logger.info(f"Neurons: {stats['total_neurons']}")
-    logger.info(f"  Knowledge: {stats['knowledge_neurons']}")
-    logger.info(f"  Memory: {stats['memory_neurons']}")
-    logger.info(f"  Tool: {stats['tool_neurons']}")
-    logger.info("")
-    logger.info(f"Synapses: {stats['total_synapses']}")
-    logger.info(f"Avg Connectivity: {stats['average_connectivity']:.2f}")
+    if RICH_AVAILABLE:
+        # Create a nice table
+        table = Table(title="Brain Statistics", show_header=True, header_style="bold cyan")
+        table.add_column("Metric", style="cyan", width=20)
+        table.add_column("Value", style="green", width=30)
+        
+        table.add_row("Database", args.database)
+        table.add_row("Dimension", f"{compression_engine.vector_dim}D")
+        table.add_row("", "")
+        table.add_row("[bold]Total Neurons[/bold]", f"[bold]{stats['total_neurons']:,}[/bold]")
+        table.add_row("  Knowledge", f"{stats['knowledge_neurons']:,}")
+        table.add_row("  Memory", f"{stats['memory_neurons']:,}")
+        table.add_row("  Tool", f"{stats['tool_neurons']:,}")
+        table.add_row("", "")
+        table.add_row("[bold]Total Synapses[/bold]", f"[bold]{stats['total_synapses']:,}[/bold]")
+        table.add_row("Avg Connectivity", f"{stats['average_connectivity']:.2f}")
+        
+        console.print(table)
+    else:
+        print(f"\nDatabase: {args.database}")
+        print(f"Dimension: {compression_engine.vector_dim}D")
+        print(f"\nNeurons: {stats['total_neurons']:,}")
+        print(f"  Knowledge: {stats['knowledge_neurons']:,}")
+        print(f"  Memory: {stats['memory_neurons']:,}")
+        print(f"  Tool: {stats['tool_neurons']:,}")
+        print(f"\nSynapses: {stats['total_synapses']:,}")
+        print(f"Avg Connectivity: {stats['average_connectivity']:.2f}\n")
 
 
 def cmd_gpu_info(args):
     """Show GPU information."""
-    logger.info("=" * 70)
-    logger.info("GPU INFORMATION")
-    logger.info("=" * 70)
+    print_header("GPU INFORMATION", "Hardware acceleration status")
     
     from neuron_system.engines.gpu_accelerator import GPUAccelerator
     
@@ -638,6 +898,16 @@ def cmd_cluster(args):
     logger.info("✅ Clustering complete")
 
 
+def cmd_view(args):
+    """Start 3D brain viewer."""
+    print_header("3D BRAIN VIEWER", "High-performance WebGL visualization")
+    
+    from neuron_system.visualization.threejs_viewer import ThreeJSBrainViewer
+    
+    viewer = ThreeJSBrainViewer(args.database)
+    viewer.run(port=args.port)
+
+
 def cmd_migrate(args):
     """Migrate to different dimension."""
     logger.info("=" * 70)
@@ -705,8 +975,16 @@ def cmd_migrate(args):
 def main():
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(
-        description='F.R.I.D.A.Y AI - Command Line Interface',
-        formatter_class=argparse.RawDescriptionHelpFormatter
+        description='F.R.I.D.A.Y AI - 3D Synaptic Neuron System',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        add_help=False  # We'll handle help ourselves
+    )
+    
+    # Add custom help
+    parser.add_argument(
+        '-h', '--help',
+        action='store_true',
+        help='Show this help message'
     )
     
     # Global options
@@ -828,6 +1106,16 @@ def main():
     )
     cluster_parser.set_defaults(func=cmd_cluster)
     
+    # View command
+    view_parser = subparsers.add_parser('view', help='Start 3D brain viewer')
+    view_parser.add_argument(
+        '--port',
+        type=int,
+        default=5001,
+        help='Port for web server (default: 5001)'
+    )
+    view_parser.set_defaults(func=cmd_view)
+    
     # Migrate command
     migrate_parser = subparsers.add_parser('migrate', help='Migrate to different dimension')
     migrate_parser.add_argument('source', help='Source database')
@@ -837,18 +1125,26 @@ def main():
     # Parse args
     args = parser.parse_args()
     
+    # Handle help
+    if hasattr(args, 'help') and args.help:
+        print_help()
+        sys.exit(0)
+    
     if not args.command:
-        parser.print_help()
-        sys.exit(1)
+        print_help()
+        sys.exit(0)
     
     # Execute command
     try:
         args.func(args)
     except KeyboardInterrupt:
-        logger.info("\nInterrupted")
+        if RICH_AVAILABLE:
+            console.print("\n[yellow]⚠[/yellow] Interrupted by user")
+        else:
+            print("\n⚠ Interrupted by user")
         sys.exit(1)
     except Exception as e:
-        logger.error(f"Error: {e}")
+        print_error(f"Error: {e}")
         import traceback
         traceback.print_exc()
         sys.exit(1)

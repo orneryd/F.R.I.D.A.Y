@@ -19,6 +19,7 @@ class NeuronType(Enum):
     MEMORY = "memory"
     SENSOR = "sensor"
     DECISION = "decision"
+    REASONING = "reasoning"  # For chain-of-thought and logical reasoning
 
 
 class Neuron(ABC):

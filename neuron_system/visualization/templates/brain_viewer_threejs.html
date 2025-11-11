@@ -1,0 +1,1767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Friday Brain - 3D Neural Network (Three.js)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            background: #000;
+        }
+        
+        #container {
+            width: 100vw;
+            height: 100vh;
+            transition: margin-left 0.3s ease;
+        }
+        
+        #container.sidebar-open {
+            margin-left: 350px;
+        }
+        
+        /* Left Sidebar */
+        #sidebar {
+            position: fixed;
+            left: -350px;
+            top: 0;
+            width: 350px;
+            height: 100vh;
+            background: rgba(10, 10, 10, 0.95);
+            border-right: 1px solid #333;
+            z-index: 200;
+            transition: left 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        #sidebar.open {
+            left: 0;
+        }
+        
+        #sidebar-header {
+            padding: 15px;
+            background: rgba(20, 20, 20, 0.9);
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        #sidebar-header h2 {
+            color: #4CAF50;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        
+        #sidebar-close {
+            background: transparent;
+            color: #888;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            line-height: 30px;
+            text-align: center;
+        }
+        
+        #sidebar-close:hover {
+            color: #fff;
+        }
+        
+        #sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            color: #ccc;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+        
+        #sidebar-content::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        #sidebar-content::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.3);
+        }
+        
+        #sidebar-content::-webkit-scrollbar-thumb {
+            background: #444;
+            border-radius: 4px;
+        }
+        
+        #sidebar-content::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        
+        .log-entry {
+            margin-bottom: 10px;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            border-left: 3px solid #4CAF50;
+            border-radius: 3px;
+        }
+        
+        .log-entry.info {
+            border-left-color: #2196F3;
+        }
+        
+        .log-entry.warning {
+            border-left-color: #FF9800;
+        }
+        
+        .log-entry.error {
+            border-left-color: #F44336;
+        }
+        
+        .log-time {
+            color: #666;
+            font-size: 10px;
+            margin-bottom: 3px;
+        }
+        
+        .log-message {
+            color: #ccc;
+            word-wrap: break-word;
+        }
+        
+        /* Toggle Button */
+        #sidebar-toggle {
+            position: fixed;
+            left: 10px;
+            top: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            border: 1px solid #4CAF50;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 250;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+        
+        #sidebar-toggle:hover {
+            background: rgba(76, 175, 80, 0.2);
+            border-color: #4CAF50;
+            box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+        }
+        
+        #sidebar-toggle.active {
+            left: 360px;
+        }
+        
+        /* Info Panel */
+        #info {
+            position: absolute;
+            top: 60px;
+            left: 10px;
+            color: white;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 5px;
+            font-size: 13px;
+            z-index: 100;
+            border: 1px solid #333;
+            transition: left 0.3s ease;
+        }
+        
+        #info.sidebar-open {
+            left: 370px;
+        }
+        
+        #info h3 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            color: #4CAF50;
+            border-bottom: 1px solid #333;
+            padding-bottom: 5px;
+        }
+        
+        #stats {
+            font-family: 'Consolas', monospace;
+            font-size: 12px;
+        }
+        
+        #stats span {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        
+        /* Controls Panel */
+        #controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: white;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 5px;
+            z-index: 100;
+            border: 1px solid #333;
+            min-width: 250px;
+        }
+        
+        #controls h3 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            color: #4CAF50;
+            border-bottom: 1px solid #333;
+            padding-bottom: 5px;
+        }
+        
+        .control-group {
+            margin-bottom: 12px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 12px;
+            color: #aaa;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 4px;
+            background: #333;
+            outline: none;
+            border-radius: 2px;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            background: #4CAF50;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+        
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 3px;
+            font-size: 12px;
+            transition: background 0.2s;
+        }
+        
+        button:hover {
+            background: #45a049;
+        }
+        
+        button:disabled {
+            background: #555;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+        
+        button.secondary {
+            background: #2196F3;
+        }
+        
+        button.secondary:hover {
+            background: #1976D2;
+        }
+        
+        select, input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid #333;
+            border-radius: 4px;
+            color: white;
+            font-size: 12px;
+            font-family: 'Consolas', monospace;
+        }
+        
+        select:focus, input:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+        
+        /* Training Panel */
+        #training-panel {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            color: white;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 5px;
+            z-index: 100;
+            border: 1px solid #333;
+            min-width: 350px;
+            max-width: 450px;
+            display: none;
+            transition: left 0.3s ease;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        #training-panel.sidebar-open {
+            left: 370px;
+        }
+        
+        #training-panel::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        #training-panel::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.3);
+        }
+        
+        #training-panel::-webkit-scrollbar-thumb {
+            background: #444;
+            border-radius: 4px;
+        }
+        
+        /* HF Login Section */
+        #hf-login-section {
+            margin-bottom: 15px;
+            padding: 10px;
+            background: rgba(255, 152, 0, 0.1);
+            border: 1px solid #FF9800;
+            border-radius: 4px;
+        }
+        
+        #hf-login-section.logged-in {
+            background: rgba(76, 175, 80, 0.1);
+            border-color: #4CAF50;
+        }
+        
+        #hf-status {
+            font-size: 11px;
+            margin-bottom: 8px;
+            color: #FF9800;
+        }
+        
+        #hf-status.logged-in {
+            color: #4CAF50;
+        }
+        
+        .hf-icon {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #FF9800;
+            margin-right: 5px;
+        }
+        
+        .hf-icon.logged-in {
+            background: #4CAF50;
+        }
+        
+        /* Search Bar */
+        .search-container {
+            position: relative;
+            margin-bottom: 10px;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 8px 35px 8px 10px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid #333;
+            border-radius: 4px;
+            color: white;
+            font-size: 12px;
+            font-family: 'Consolas', monospace;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+        
+        .search-button {
+            position: absolute;
+            right: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: transparent;
+            border: none;
+            color: #4CAF50;
+            cursor: pointer;
+            padding: 5px;
+            font-size: 14px;
+        }
+        
+        .search-button:hover {
+            color: #45a049;
+        }
+        
+        .search-results {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 5px;
+            display: none;
+        }
+        
+        .search-results::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .search-results::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.3);
+        }
+        
+        .search-results::-webkit-scrollbar-thumb {
+            background: #444;
+            border-radius: 3px;
+        }
+        
+        .search-result-item {
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid #333;
+            border-radius: 3px;
+            margin-bottom: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .search-result-item:hover {
+            background: rgba(76, 175, 80, 0.2);
+            border-color: #4CAF50;
+        }
+        
+        .search-result-name {
+            font-weight: bold;
+            color: #4CAF50;
+            font-size: 12px;
+        }
+        
+        .search-result-desc {
+            font-size: 10px;
+            color: #aaa;
+            margin-top: 3px;
+        }
+        
+        .search-result-stats {
+            font-size: 9px;
+            color: #666;
+            margin-top: 3px;
+        }
+        
+        #training-panel h3 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            color: #4CAF50;
+            border-bottom: 1px solid #333;
+            padding-bottom: 5px;
+        }
+        
+        #training-status {
+            margin-top: 10px;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            border-left: 3px solid #4CAF50;
+            border-radius: 3px;
+            font-size: 11px;
+            display: none;
+        }
+        
+        #training-status.error {
+            border-left-color: #F44336;
+        }
+        
+        #training-status.success {
+            border-left-color: #4CAF50;
+        }
+        
+        .tab-buttons {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+        
+        .tab-button {
+            flex: 1;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid #333;
+            color: #aaa;
+            cursor: pointer;
+            font-size: 11px;
+            transition: all 0.2s;
+        }
+        
+        .tab-button.active {
+            background: #4CAF50;
+            color: white;
+            border-color: #4CAF50;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Neuron Info Panel */
+        #neuron-info {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            color: white;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 15px;
+            border-radius: 5px;
+            z-index: 100;
+            max-width: 400px;
+            max-height: 300px;
+            overflow-y: auto;
+            display: none;
+            border: 1px solid #333;
+        }
+        
+        #neuron-info h3 {
+            margin-top: 0;
+            font-size: 14px;
+            color: #4CAF50;
+            border-bottom: 1px solid #444;
+            padding-bottom: 5px;
+        }
+        
+        #neuron-info .close-btn {
+            float: right;
+            cursor: pointer;
+            font-size: 20px;
+            color: #888;
+            background: none;
+            border: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        #neuron-info .close-btn:hover {
+            color: #fff;
+        }
+        
+        .info-row {
+            margin: 8px 0;
+            font-size: 12px;
+        }
+        
+        .info-label {
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 20px;
+            text-align: center;
+            z-index: 300;
+        }
+        
+        #progress {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #4CAF50;
+        }
+    </style>
+</head>
+<body>
+    <!-- Left Sidebar -->
+    <div id="sidebar">
+        <div id="sidebar-header">
+            <h2>SYSTEM LOG</h2>
+            <button id="sidebar-close">&times;</button>
+        </div>
+        <div id="sidebar-content">
+            <div class="log-entry info">
+                <div class="log-time">System initialized</div>
+                <div class="log-message">Friday Brain Viewer v2.3</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sidebar Toggle Button -->
+    <button id="sidebar-toggle">☰ Logs</button>
+    
+    <!-- 3D Container -->
+    <div id="container"></div>
+    
+    <!-- Loading Screen -->
+    <div id="loading">
+        <div>Loading Brain Data...</div>
+        <div id="progress"></div>
+    </div>
+    
+    <!-- Info Panel -->
+    <div id="info" style="display: none;">
+        <h3>NEURAL NETWORK</h3>
+        <div id="stats">
+            Neurons: <span id="neuron-count">0</span><br>
+            Synapses: <span id="synapse-count">0</span><br>
+            FPS: <span id="fps">0</span>
+        </div>
+    </div>
+    
+    <!-- Controls Panel -->
+    <div id="controls" style="display: none;">
+        <h3>CONTROLS</h3>
+        <div class="control-group">
+            <label>Min Weight: <span id="weight-value">0.3</span></label>
+            <input type="range" id="min-weight" min="0" max="1" step="0.05" value="0.3">
+        </div>
+        <div class="control-group">
+            <label>Max Synapses: <span id="max-value">1000</span></label>
+            <input type="range" id="max-synapses" min="100" max="10000" step="100" value="1000">
+        </div>
+        <div class="control-group">
+            <button id="reload-btn">Reload</button>
+            <button id="toggle-rotation">Rotate</button>
+        </div>
+        <div class="control-group">
+            <label style="display: flex; align-items: center; gap: 5px;">
+                <input type="checkbox" id="show-synapses" checked> Show Synapses
+            </label>
+        </div>
+        <div class="control-group">
+            <button id="toggle-training" class="secondary">Training</button>
+        </div>
+    </div>
+    
+    <!-- Training Panel -->
+    <div id="training-panel">
+        <h3>TRAINING</h3>
+        
+        <!-- HuggingFace Login Section -->
+        <div id="hf-login-section">
+            <div id="hf-status">
+                <span class="hf-icon"></span>
+                <span id="hf-status-text">HuggingFace: Not logged in</span>
+            </div>
+            <div id="hf-login-form">
+                <div class="control-group">
+                    <label>HF Token:</label>
+                    <input type="password" id="hf-token" placeholder="hf_...">
+                </div>
+                <div class="control-group">
+                    <button id="hf-login-btn" class="secondary">Login to HuggingFace</button>
+                </div>
+                <div style="font-size: 10px; color: #888; margin-top: 5px;">
+                    Get your token at: <a href="https://huggingface.co/settings/tokens" target="_blank" style="color: #4CAF50;">huggingface.co/settings/tokens</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="tab-buttons">
+            <div class="tab-button active" data-tab="local">Local</div>
+            <div class="tab-button" data-tab="huggingface">HuggingFace</div>
+            <div class="tab-button" data-tab="manual">Manual</div>
+        </div>
+        
+        <!-- Local Dataset Training Tab -->
+        <div class="tab-content active" id="local-tab">
+            <div class="control-group">
+                <label>Local Dataset:</label>
+                <select id="local-dataset-select">
+                    <option value="">Loading...</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>Max Samples:</label>
+                <input type="number" id="local-max-samples" value="1000" min="100" max="10000" step="100">
+            </div>
+            <div class="control-group">
+                <button id="local-train-btn">Start Training</button>
+            </div>
+        </div>
+        
+        <!-- HuggingFace Dataset Training Tab -->
+        <div class="tab-content" id="huggingface-tab">
+            <!-- Search Bar -->
+            <div class="control-group">
+                <label>Search HuggingFace Datasets:</label>
+                <div class="search-container">
+                    <input type="text" id="hf-search-input" class="search-input" placeholder="Search datasets (e.g. 'question answering')...">
+                    <button class="search-button" id="hf-search-btn">🔍</button>
+                </div>
+                <div id="hf-search-results" class="search-results"></div>
+            </div>
+            
+            <!-- Popular Datasets -->
+            <div class="control-group">
+                <label>Or select popular dataset:</label>
+                <select id="hf-dataset-select">
+                    <option value="">Loading...</option>
+                </select>
+            </div>
+            
+            <!-- Selected Dataset Display -->
+            <div class="control-group" id="hf-selected-dataset" style="display: none;">
+                <label>Selected Dataset:</label>
+                <div style="padding: 8px; background: rgba(76, 175, 80, 0.1); border: 1px solid #4CAF50; border-radius: 4px; font-size: 11px;">
+                    <div id="hf-selected-name" style="font-weight: bold; color: #4CAF50;"></div>
+                    <div id="hf-selected-desc" style="color: #aaa; margin-top: 3px;"></div>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <label>Max Samples:</label>
+                <input type="number" id="hf-max-samples" value="1000" min="100" max="10000" step="100">
+            </div>
+            <div class="control-group">
+                <button id="hf-train-btn">Start Training</button>
+            </div>
+            <div style="font-size: 10px; color: #888; margin-top: 5px;">
+                Note: First login to HuggingFace above
+            </div>
+        </div>
+        
+        <!-- Manual Training Tab -->
+        <div class="tab-content" id="manual-tab">
+            <div class="control-group">
+                <label>Knowledge Text:</label>
+                <textarea id="knowledge-text" rows="4" style="width: 100%; padding: 8px; background: rgba(0,0,0,0.5); border: 1px solid #333; border-radius: 4px; color: white; font-family: 'Consolas', monospace; font-size: 12px;"></textarea>
+            </div>
+            <div class="control-group">
+                <label>Tags (comma-separated):</label>
+                <input type="text" id="knowledge-tags" placeholder="ai, ml, knowledge">
+            </div>
+            <div class="control-group">
+                <button id="learn-btn">Add Knowledge</button>
+            </div>
+        </div>
+        
+        <div id="training-status"></div>
+    </div>
+    
+    <!-- Neuron Info Panel -->
+    <div id="neuron-info">
+        <button class="close-btn" onclick="closeNeuronInfo()">&times;</button>
+        <h3>NEURON DETAILS</h3>
+        <div id="neuron-details"></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    
+    <script>
+        let scene, camera, renderer, controls;
+        let neuronMesh, synapseMesh;
+        let autoRotate = false;  // Start without auto-rotation
+        let frameCount = 0;
+        let lastTime = Date.now();
+        
+        // Settings
+        let minWeight = 0.3;
+        let maxSynapses = 1000;
+        
+        // Data storage
+        let neuronsData = [];
+        let raycaster = new THREE.Raycaster();
+        let mouse = new THREE.Vector2();
+        
+        // Raycaster settings for point picking
+        raycaster.params.Points.threshold = 2;
+        
+        // Sidebar state
+        let sidebarOpen = false;
+        
+        // WebSocket for live updates
+        let socket = null;
+        let liveTrainingActive = false;
+        
+        // Logging functions
+        function addLog(message, type = 'info') {
+            const sidebar = document.getElementById('sidebar-content');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            
+            const time = new Date().toLocaleTimeString();
+            entry.innerHTML = `
+                <div class="log-time">${time}</div>
+                <div class="log-message">${message}</div>
+            `;
+            
+            sidebar.appendChild(entry);
+            sidebar.scrollTop = sidebar.scrollHeight;
+        }
+        
+        function toggleSidebar() {
+            sidebarOpen = !sidebarOpen;
+            const sidebar = document.getElementById('sidebar');
+            const container = document.getElementById('container');
+            const toggle = document.getElementById('sidebar-toggle');
+            const info = document.getElementById('info');
+            const trainingPanel = document.getElementById('training-panel');
+            
+            if (sidebarOpen) {
+                sidebar.classList.add('open');
+                container.classList.add('sidebar-open');
+                toggle.classList.add('active');
+                info.classList.add('sidebar-open');
+                if (trainingPanelOpen) {
+                    trainingPanel.classList.add('sidebar-open');
+                }
+                addLog('Sidebar opened', 'info');
+            } else {
+                sidebar.classList.remove('open');
+                container.classList.remove('sidebar-open');
+                toggle.classList.remove('active');
+                info.classList.remove('sidebar-open');
+                trainingPanel.classList.remove('sidebar-open');
+            }
+            
+            // Trigger resize to adjust renderer
+            onWindowResize();
+        }
+        
+        function init() {
+            addLog('Initializing 3D renderer...', 'info');
+            // Scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x000000);
+            scene.fog = new THREE.Fog(0x000000, 100, 500);
+            
+            // Camera
+            camera = new THREE.PerspectiveCamera(
+                75,
+                window.innerWidth / window.innerHeight,
+                0.1,
+                1000
+            );
+            camera.position.set(50, 50, 50);
+            
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            document.getElementById('container').appendChild(renderer.domElement);
+            
+            // Controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.autoRotate = autoRotate;
+            controls.autoRotateSpeed = 0.5;
+            
+            // Lights
+            const ambientLight = new THREE.AmbientLight(0x404040, 2);
+            scene.add(ambientLight);
+            
+            const pointLight = new THREE.PointLight(0xffffff, 1, 500);
+            pointLight.position.set(50, 50, 50);
+            scene.add(pointLight);
+            
+            // Grid helper
+            const gridHelper = new THREE.GridHelper(200, 20, 0x444444, 0x222222);
+            scene.add(gridHelper);
+            
+            // Load data
+            loadBrainData();
+            
+            // Event listeners
+            window.addEventListener('resize', onWindowResize);
+            window.addEventListener('click', onMouseClick);
+            setupControls();
+            setupSidebar();
+            setupTraining();
+            
+            addLog('Scene initialized successfully', 'info');
+            addLog('Camera position: (50, 50, 50)', 'info');
+            addLog('Grid helper added', 'info');
+            
+            // Setup WebSocket
+            setupWebSocket();
+            
+            // Start animation
+            animate();
+        }
+        
+        function setupWebSocket() {
+            socket = io();
+            
+            socket.on('connect', () => {
+                addLog('WebSocket connected - Live updates enabled', 'info');
+            });
+            
+            socket.on('disconnect', () => {
+                addLog('WebSocket disconnected', 'warning');
+            });
+            
+            socket.on('neuron_added', (data) => {
+                if (liveTrainingActive) {
+                    addNeuronLive(data);
+                }
+            });
+            
+            socket.on('training_progress', (data) => {
+                updateTrainingProgress(data);
+            });
+        }
+        
+        function addNeuronLive(neuronData) {
+            // Add neuron to data array
+            neuronsData.push(neuronData);
+            
+            // Update neuron mesh
+            if (neuronMesh) {
+                const geometry = neuronMesh.geometry;
+                const positions = geometry.attributes.position.array;
+                const colors = geometry.attributes.color.array;
+                
+                // Create new arrays with space for one more neuron
+                const newPositions = new Float32Array(positions.length + 3);
+                const newColors = new Float32Array(colors.length + 3);
+                
+                // Copy existing data
+                newPositions.set(positions);
+                newColors.set(colors);
+                
+                // Add new neuron
+                const idx = positions.length;
+                newPositions[idx] = neuronData.position.x;
+                newPositions[idx + 1] = neuronData.position.y;
+                newPositions[idx + 2] = neuronData.position.z;
+                
+                const color = getNeuronColor(neuronData.neuron_type);
+                newColors[idx] = color.r;
+                newColors[idx + 1] = color.g;
+                newColors[idx + 2] = color.b;
+                
+                // Update geometry
+                geometry.setAttribute('position', new THREE.BufferAttribute(newPositions, 3));
+                geometry.setAttribute('color', new THREE.BufferAttribute(newColors, 3));
+                geometry.attributes.position.needsUpdate = true;
+                geometry.attributes.color.needsUpdate = true;
+            }
+            
+            // Update neuron count
+            document.getElementById('neuron-count').textContent = neuronsData.length;
+        }
+        
+        function updateTrainingProgress(data) {
+            if (data.complete) {
+                liveTrainingActive = false;
+                addLog(`Training complete: ${data.trained} samples trained`, 'info');
+                addLog(`Total neurons: ${data.total_neurons}`, 'info');
+                
+                if (data.error) {
+                    addLog(`Error: ${data.error}`, 'error');
+                    showStatus(`Error: ${data.error}`, 'error');
+                } else {
+                    showStatus(`Complete! Trained: ${data.trained}, Errors: ${data.errors}, Total Neurons: ${data.total_neurons}`, 'success');
+                }
+            } else {
+                const percent = ((data.trained / data.total) * 100).toFixed(1);
+                addLog(`Progress: ${data.trained}/${data.total} (${percent}%) - ${data.total_neurons} neurons`, 'info');
+                showStatus(`Training: ${data.trained}/${data.total} (${percent}%) - ${data.total_neurons} neurons`, 'success');
+            }
+        }
+        
+        function setupSidebar() {
+            document.getElementById('sidebar-toggle').addEventListener('click', toggleSidebar);
+            document.getElementById('sidebar-close').addEventListener('click', toggleSidebar);
+        }
+        
+        // Training functions
+        let trainingPanelOpen = false;
+        
+        function toggleTrainingPanel() {
+            trainingPanelOpen = !trainingPanelOpen;
+            const panel = document.getElementById('training-panel');
+            
+            if (trainingPanelOpen) {
+                panel.style.display = 'block';
+                if (sidebarOpen) {
+                    panel.classList.add('sidebar-open');
+                }
+                loadLocalDatasets();
+                checkHFStatus();
+                addLog('Training panel opened', 'info');
+            } else {
+                panel.style.display = 'none';
+            }
+        }
+        
+        function checkHFStatus() {
+            fetch('/api/hf/status')
+                .then(response => response.json())
+                .then(data => {
+                    updateHFStatus(data.logged_in, data.username);
+                    if (data.logged_in) {
+                        loadHFDatasets();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking HF status:', error);
+                });
+        }
+        
+        function updateHFStatus(loggedIn, username) {
+            const section = document.getElementById('hf-login-section');
+            const status = document.getElementById('hf-status');
+            const statusText = document.getElementById('hf-status-text');
+            const icon = document.querySelector('.hf-icon');
+            const form = document.getElementById('hf-login-form');
+            
+            if (loggedIn) {
+                section.classList.add('logged-in');
+                status.classList.add('logged-in');
+                icon.classList.add('logged-in');
+                statusText.textContent = `HuggingFace: Logged in${username ? ' as ' + username : ''}`;
+                form.style.display = 'none';
+            } else {
+                section.classList.remove('logged-in');
+                status.classList.remove('logged-in');
+                icon.classList.remove('logged-in');
+                statusText.textContent = 'HuggingFace: Not logged in';
+                form.style.display = 'block';
+            }
+        }
+        
+        function loginToHF() {
+            const token = document.getElementById('hf-token').value;
+            const btn = document.getElementById('hf-login-btn');
+            
+            if (!token) {
+                showStatus('Please enter your HuggingFace token', 'error');
+                return;
+            }
+            
+            btn.disabled = true;
+            btn.textContent = 'Logging in...';
+            
+            addLog('Logging in to HuggingFace...', 'info');
+            
+            fetch('/api/hf/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token: token })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    showStatus(`Login failed: ${data.error}`, 'error');
+                    addLog(`HF login failed: ${data.error}`, 'error');
+                } else {
+                    showStatus(data.message, 'success');
+                    addLog(`HF login successful: ${data.username}`, 'info');
+                    updateHFStatus(true, data.username);
+                    loadHFDatasets();
+                    document.getElementById('hf-token').value = '';
+                }
+            })
+            .catch(error => {
+                showStatus(`Error: ${error}`, 'error');
+                addLog(`HF login error: ${error}`, 'error');
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btn.textContent = 'Login to HuggingFace';
+            });
+        }
+        
+        function loadLocalDatasets() {
+            fetch('/api/datasets')
+                .then(response => response.json())
+                .then(data => {
+                    const select = document.getElementById('local-dataset-select');
+                    select.innerHTML = '';
+                    
+                    data.datasets.forEach(ds => {
+                        const option = document.createElement('option');
+                        option.value = ds.name;
+                        option.textContent = `${ds.name} (${ds.size})`;
+                        select.appendChild(option);
+                    });
+                    
+                    addLog(`Loaded ${data.datasets.length} local datasets`, 'info');
+                })
+                .catch(error => {
+                    addLog(`Error loading local datasets: ${error}`, 'error');
+                });
+        }
+        
+        function loadHFDatasets() {
+            fetch('/api/hf/datasets')
+                .then(response => response.json())
+                .then(data => {
+                    const select = document.getElementById('hf-dataset-select');
+                    select.innerHTML = '<option value="">Select popular dataset...</option>';
+                    
+                    data.datasets.forEach(ds => {
+                        const option = document.createElement('option');
+                        option.value = ds.full_name;
+                        option.textContent = `${ds.name} - ${ds.description} (${ds.size})`;
+                        option.dataset.description = ds.description;
+                        select.appendChild(option);
+                    });
+                    
+                    // Handle selection
+                    select.addEventListener('change', (e) => {
+                        if (e.target.value) {
+                            const selectedOption = e.target.options[e.target.selectedIndex];
+                            showSelectedDataset(e.target.value, selectedOption.dataset.description);
+                        }
+                    });
+                    
+                    addLog(`Loaded ${data.datasets.length} popular HuggingFace datasets`, 'info');
+                })
+                .catch(error => {
+                    addLog(`Error loading HF datasets: ${error}`, 'error');
+                });
+        }
+        
+        function searchHFDatasets() {
+            const query = document.getElementById('hf-search-input').value.trim();
+            const resultsDiv = document.getElementById('hf-search-results');
+            
+            if (!query) {
+                resultsDiv.style.display = 'none';
+                return;
+            }
+            
+            addLog(`Searching HuggingFace for: "${query}"`, 'info');
+            resultsDiv.innerHTML = '<div style="padding: 8px; color: #aaa;">Searching...</div>';
+            resultsDiv.style.display = 'block';
+            
+            fetch(`/api/hf/search?query=${encodeURIComponent(query)}&limit=20`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        resultsDiv.innerHTML = `<div style="padding: 8px; color: #F44336;">Error: ${data.error}</div>`;
+                        addLog(`Search error: ${data.error}`, 'error');
+                        return;
+                    }
+                    
+                    if (data.datasets.length === 0) {
+                        resultsDiv.innerHTML = '<div style="padding: 8px; color: #aaa;">No datasets found</div>';
+                        addLog('No datasets found', 'info');
+                        return;
+                    }
+                    
+                    resultsDiv.innerHTML = '';
+                    data.datasets.forEach(ds => {
+                        const item = document.createElement('div');
+                        item.className = 'search-result-item';
+                        item.innerHTML = `
+                            <div class="search-result-name">${ds.name}</div>
+                            <div class="search-result-desc">${ds.description}</div>
+                            <div class="search-result-stats">
+                                Downloads: ${ds.downloads.toLocaleString()} | Likes: ${ds.likes}
+                            </div>
+                        `;
+                        
+                        item.addEventListener('click', () => {
+                            selectSearchResult(ds);
+                            resultsDiv.style.display = 'none';
+                            document.getElementById('hf-search-input').value = '';
+                        });
+                        
+                        resultsDiv.appendChild(item);
+                    });
+                    
+                    addLog(`Found ${data.datasets.length} datasets`, 'info');
+                })
+                .catch(error => {
+                    resultsDiv.innerHTML = `<div style="padding: 8px; color: #F44336;">Error: ${error}</div>`;
+                    addLog(`Search error: ${error}`, 'error');
+                });
+        }
+        
+        function selectSearchResult(dataset) {
+            // Clear dropdown selection
+            document.getElementById('hf-dataset-select').value = '';
+            
+            // Show selected dataset
+            showSelectedDataset(dataset.full_name, dataset.description);
+            
+            addLog(`Selected dataset: ${dataset.full_name}`, 'info');
+        }
+        
+        function showSelectedDataset(fullName, description) {
+            const container = document.getElementById('hf-selected-dataset');
+            const nameDiv = document.getElementById('hf-selected-name');
+            const descDiv = document.getElementById('hf-selected-desc');
+            
+            nameDiv.textContent = fullName;
+            descDiv.textContent = description || 'No description';
+            container.style.display = 'block';
+            
+            // Store selected dataset for training
+            window.selectedHFDataset = fullName;
+        }
+        
+        function startLocalTraining() {
+            const dataset = document.getElementById('local-dataset-select').value;
+            const maxSamples = parseInt(document.getElementById('local-max-samples').value);
+            const trainBtn = document.getElementById('local-train-btn');
+            
+            if (!dataset) {
+                showStatus('Please select a dataset', 'error');
+                return;
+            }
+            
+            trainBtn.disabled = true;
+            trainBtn.textContent = 'Training...';
+            liveTrainingActive = true;
+            
+            addLog(`Starting local training: ${dataset} (${maxSamples} samples)`, 'info');
+            addLog('Live updates enabled - watch neurons appear in real-time!', 'info');
+            
+            fetch('/api/train', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    dataset: dataset,
+                    max_samples: maxSamples,
+                    source: 'local'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.live_updates) {
+                    showStatus('Training started - watch live updates!', 'success');
+                } else {
+                    handleTrainingResponse(data);
+                    trainBtn.disabled = false;
+                    trainBtn.textContent = 'Start Training';
+                }
+            })
+            .catch(error => {
+                showStatus(`Error: ${error}`, 'error');
+                addLog(`Training error: ${error}`, 'error');
+                trainBtn.disabled = false;
+                trainBtn.textContent = 'Start Training';
+                liveTrainingActive = false;
+            });
+            
+            // Re-enable button after training completes (handled by progress updates)
+            setTimeout(() => {
+                if (!liveTrainingActive) {
+                    trainBtn.disabled = false;
+                    trainBtn.textContent = 'Start Training';
+                }
+            }, 1000);
+        }
+        
+        function startHFTraining() {
+            // Check if dataset is selected from dropdown or search
+            let dataset = document.getElementById('hf-dataset-select').value;
+            if (!dataset && window.selectedHFDataset) {
+                dataset = window.selectedHFDataset;
+            }
+            
+            const maxSamples = parseInt(document.getElementById('hf-max-samples').value);
+            const trainBtn = document.getElementById('hf-train-btn');
+            
+            if (!dataset) {
+                showStatus('Please select or search for a dataset', 'error');
+                return;
+            }
+            
+            trainBtn.disabled = true;
+            trainBtn.textContent = 'Training...';
+            liveTrainingActive = true;
+            
+            addLog(`Starting HuggingFace training: ${dataset} (${maxSamples} samples)`, 'info');
+            addLog('Live updates enabled - watch neurons appear in real-time!', 'info');
+            
+            fetch('/api/train', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    dataset: dataset,
+                    max_samples: maxSamples,
+                    source: 'huggingface'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.live_updates) {
+                    showStatus('Training started - watch live updates!', 'success');
+                } else {
+                    handleTrainingResponse(data);
+                    trainBtn.disabled = false;
+                    trainBtn.textContent = 'Start Training';
+                }
+            })
+            .catch(error => {
+                showStatus(`Error: ${error}`, 'error');
+                addLog(`Training error: ${error}`, 'error');
+                trainBtn.disabled = false;
+                trainBtn.textContent = 'Start Training';
+                liveTrainingActive = false;
+            });
+            
+            // Re-enable button after training completes (handled by progress updates)
+            setTimeout(() => {
+                if (!liveTrainingActive) {
+                    trainBtn.disabled = false;
+                    trainBtn.textContent = 'Start Training';
+                }
+            }, 1000);
+        }
+        
+        function handleTrainingResponse(data) {
+            if (data.error) {
+                showStatus(`Error: ${data.error}`, 'error');
+                addLog(`Training failed: ${data.error}`, 'error');
+            } else {
+                showStatus(`Success! Trained: ${data.trained}, Errors: ${data.errors}, Total Neurons: ${data.total_neurons}`, 'success');
+                addLog(`Training completed: ${data.trained} samples`, 'info');
+                addLog(`Total neurons: ${data.total_neurons}`, 'info');
+                
+                // Reload brain data
+                setTimeout(() => {
+                    loadBrainData();
+                }, 1000);
+            }
+        }
+        
+        function addKnowledge() {
+            const text = document.getElementById('knowledge-text').value;
+            const tagsStr = document.getElementById('knowledge-tags').value;
+            const learnBtn = document.getElementById('learn-btn');
+            const status = document.getElementById('training-status');
+            
+            if (!text.trim()) {
+                showStatus('Please enter some text', 'error');
+                return;
+            }
+            
+            const tags = tagsStr.split(',').map(t => t.trim()).filter(t => t);
+            
+            learnBtn.disabled = true;
+            learnBtn.textContent = 'Adding...';
+            status.style.display = 'none';
+            
+            addLog(`Adding knowledge: "${text.substring(0, 50)}..."`, 'info');
+            
+            fetch('/api/learn', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    text: text,
+                    tags: tags
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    showStatus(`Error: ${data.error}`, 'error');
+                    addLog(`Failed to add knowledge: ${data.error}`, 'error');
+                } else {
+                    showStatus(`Success! Total Neurons: ${data.total_neurons}`, 'success');
+                    addLog(`Knowledge added successfully`, 'info');
+                    addLog(`Total neurons: ${data.total_neurons}`, 'info');
+                    
+                    // Clear form
+                    document.getElementById('knowledge-text').value = '';
+                    document.getElementById('knowledge-tags').value = '';
+                    
+                    // Reload brain data
+                    setTimeout(() => {
+                        loadBrainData();
+                    }, 1000);
+                }
+            })
+            .catch(error => {
+                showStatus(`Error: ${error}`, 'error');
+                addLog(`Error adding knowledge: ${error}`, 'error');
+            })
+            .finally(() => {
+                learnBtn.disabled = false;
+                learnBtn.textContent = 'Add Knowledge';
+            });
+        }
+        
+        function showStatus(message, type) {
+            const status = document.getElementById('training-status');
+            status.textContent = message;
+            status.className = type;
+            status.style.display = 'block';
+        }
+        
+        function setupTraining() {
+            // Toggle button
+            document.getElementById('toggle-training').addEventListener('click', toggleTrainingPanel);
+            
+            // HuggingFace login
+            document.getElementById('hf-login-btn').addEventListener('click', loginToHF);
+            checkHFStatus();
+            
+            // HuggingFace search
+            document.getElementById('hf-search-btn').addEventListener('click', searchHFDatasets);
+            document.getElementById('hf-search-input').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    searchHFDatasets();
+                }
+            });
+            
+            // Tab switching
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const tab = btn.dataset.tab;
+                    
+                    // Update buttons
+                    document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    
+                    // Update content
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    document.getElementById(`${tab}-tab`).classList.add('active');
+                });
+            });
+            
+            // Training buttons
+            document.getElementById('local-train-btn').addEventListener('click', startLocalTraining);
+            document.getElementById('hf-train-btn').addEventListener('click', startHFTraining);
+            document.getElementById('learn-btn').addEventListener('click', addKnowledge);
+            
+            // Load datasets
+            loadLocalDatasets();
+        }
+        
+        function loadBrainData() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('info').style.display = 'none';
+            document.getElementById('controls').style.display = 'none';
+            
+            addLog(`Loading brain data (max_synapses=${maxSynapses}, min_weight=${minWeight})...`, 'info');
+            
+            fetch(`/api/brain_data?max_synapses=${maxSynapses}&min_weight=${minWeight}`)
+                .then(response => {
+                    addLog('Received response from server', 'info');
+                    return response.json();
+                })
+                .then(data => {
+                    addLog(`Loaded ${data.neurons.length} neurons`, 'info');
+                    addLog(`Loaded ${data.synapses.length} synapses`, 'info');
+                    
+                    neuronsData = data.neurons;
+                    createNeurons(data.neurons);
+                    createSynapses(data.synapses, data.neurons);
+                    
+                    document.getElementById('neuron-count').textContent = data.neurons.length;
+                    document.getElementById('synapse-count').textContent = data.synapses.length;
+                    
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('info').style.display = 'block';
+                    document.getElementById('controls').style.display = 'block';
+                    
+                    addLog('Brain visualization ready', 'info');
+                })
+                .catch(error => {
+                    console.error('Error loading brain data:', error);
+                    document.getElementById('progress').textContent = 'Error: ' + error;
+                    addLog(`Error loading data: ${error}`, 'error');
+                });
+        }
+        
+        function createNeurons(neurons) {
+            addLog('Creating neuron mesh...', 'info');
+            
+            // Remove old mesh
+            if (neuronMesh) {
+                scene.remove(neuronMesh);
+            }
+            
+            // Create geometry for all neurons at once (instanced rendering)
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(neurons.length * 3);
+            const colors = new Float32Array(neurons.length * 3);
+            
+            let typeCounts = {};
+            
+            neurons.forEach((neuron, i) => {
+                const pos = neuron.position || { x: 0, y: 0, z: 0 };
+                positions[i * 3] = pos.x;
+                positions[i * 3 + 1] = pos.y;
+                positions[i * 3 + 2] = pos.z;
+                
+                // Color based on neuron type
+                const type = neuron.neuron_type || 'KNOWLEDGE';
+                typeCounts[type] = (typeCounts[type] || 0) + 1;
+                
+                const color = getNeuronColor(type);
+                colors[i * 3] = color.r;
+                colors[i * 3 + 1] = color.g;
+                colors[i * 3 + 2] = color.b;
+            });
+            
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            
+            const material = new THREE.PointsMaterial({
+                size: 2,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.8,
+                sizeAttenuation: true
+            });
+            
+            neuronMesh = new THREE.Points(geometry, material);
+            scene.add(neuronMesh);
+            
+            // Log neuron types
+            for (let type in typeCounts) {
+                addLog(`${type}: ${typeCounts[type]} neurons`, 'info');
+            }
+        }
+        
+        function createSynapses(synapses, neurons) {
+            addLog('Creating synapse mesh...', 'info');
+            
+            // Remove old mesh
+            if (synapseMesh) {
+                scene.remove(synapseMesh);
+            }
+            
+            // Create neuron position lookup
+            const neuronPositions = {};
+            neurons.forEach(n => {
+                const pos = n.position || { x: 0, y: 0, z: 0 };
+                neuronPositions[n.id] = pos;
+            });
+            
+            // Create line geometry for all synapses
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(synapses.length * 6);
+            const colors = new Float32Array(synapses.length * 6);
+            
+            let validSynapses = 0;
+            let weightStats = { strong: 0, medium: 0, weak: 0 };
+            
+            synapses.forEach((synapse, i) => {
+                const sourcePos = neuronPositions[synapse.source_neuron_id];
+                const targetPos = neuronPositions[synapse.target_neuron_id];
+                
+                if (sourcePos && targetPos) {
+                    const idx = validSynapses * 6;
+                    
+                    positions[idx] = sourcePos.x;
+                    positions[idx + 1] = sourcePos.y;
+                    positions[idx + 2] = sourcePos.z;
+                    positions[idx + 3] = targetPos.x;
+                    positions[idx + 4] = targetPos.y;
+                    positions[idx + 5] = targetPos.z;
+                    
+                    const color = getSynapseColor(synapse.weight);
+                    colors[idx] = color.r;
+                    colors[idx + 1] = color.g;
+                    colors[idx + 2] = color.b;
+                    colors[idx + 3] = color.r;
+                    colors[idx + 4] = color.g;
+                    colors[idx + 5] = color.b;
+                    
+                    const absWeight = Math.abs(synapse.weight);
+                    if (absWeight > 0.8) weightStats.strong++;
+                    else if (absWeight > 0.5) weightStats.medium++;
+                    else weightStats.weak++;
+                    
+                    validSynapses++;
+                }
+            });
+            
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            
+            const material = new THREE.LineBasicMaterial({
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.3,
+                linewidth: 1
+            });
+            
+            synapseMesh = new THREE.LineSegments(geometry, material);
+            scene.add(synapseMesh);
+            
+            addLog(`Strong (>0.8): ${weightStats.strong}`, 'info');
+            addLog(`Medium (0.5-0.8): ${weightStats.medium}`, 'info');
+            addLog(`Weak (<0.5): ${weightStats.weak}`, 'info');
+        }
+        
+        function getNeuronColor(type) {
+            const colors = {
+                'KNOWLEDGE': { r: 0.2, g: 0.8, b: 1.0 },
+                'LOGIC': { r: 1.0, g: 0.5, b: 0.2 },
+                'TOOL': { r: 0.5, g: 1.0, b: 0.5 },
+                'default': { r: 0.7, g: 0.7, b: 0.7 }
+            };
+            return colors[type] || colors.default;
+        }
+        
+        function getSynapseColor(weight) {
+            const absWeight = Math.abs(weight);
+            if (absWeight > 0.8) {
+                return { r: 1.0, g: 0.2, b: 0.2 }; // Red for very strong
+            } else if (absWeight > 0.5) {
+                return { r: 1.0, g: 0.8, b: 0.2 }; // Yellow for strong
+            } else {
+                return { r: 0.5, g: 0.5, b: 1.0 }; // Blue for medium
+            }
+        }
+        
+        function setupControls() {
+            document.getElementById('min-weight').addEventListener('input', (e) => {
+                minWeight = parseFloat(e.target.value);
+                document.getElementById('weight-value').textContent = minWeight.toFixed(2);
+            });
+            
+            document.getElementById('max-synapses').addEventListener('input', (e) => {
+                maxSynapses = parseInt(e.target.value);
+                document.getElementById('max-value').textContent = maxSynapses;
+            });
+            
+            document.getElementById('reload-btn').addEventListener('click', () => {
+                addLog('Reloading brain data...', 'info');
+                loadBrainData();
+            });
+            
+            document.getElementById('toggle-rotation').addEventListener('click', () => {
+                autoRotate = !autoRotate;
+                controls.autoRotate = autoRotate;
+                addLog(`Auto-rotation ${autoRotate ? 'enabled' : 'disabled'}`, 'info');
+            });
+            
+            document.getElementById('show-synapses').addEventListener('change', (e) => {
+                if (synapseMesh) {
+                    synapseMesh.visible = e.target.checked;
+                    addLog(`Synapses ${e.target.checked ? 'shown' : 'hidden'}`, 'info');
+                }
+            });
+        }
+        
+        function onMouseClick(event) {
+            // Calculate mouse position in normalized device coordinates
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            
+            // Update raycaster
+            raycaster.setFromCamera(mouse, camera);
+            
+            // Check for intersections with neurons
+            if (neuronMesh) {
+                const intersects = raycaster.intersectObject(neuronMesh);
+                
+                if (intersects.length > 0) {
+                    const index = intersects[0].index;
+                    if (index < neuronsData.length) {
+                        const neuron = neuronsData[index];
+                        addLog(`Clicked neuron: ${neuron.id.substring(0, 8)}...`, 'info');
+                        showNeuronInfo(neuron);
+                    }
+                }
+            }
+        }
+        
+        function showNeuronInfo(neuron) {
+            // Fetch detailed neuron info from backend
+            fetch(`/api/neuron/${neuron.id}`)
+                .then(response => response.json())
+                .then(data => {
+                    const detailsDiv = document.getElementById('neuron-details');
+                    
+                    let html = `
+                        <div class="info-row">
+                            <span class="info-label">ID:</span> ${data.id.substring(0, 8)}...
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Type:</span> ${data.neuron_type || 'KNOWLEDGE'}
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Position:</span> 
+                            (${neuron.position.x.toFixed(1)}, ${neuron.position.y.toFixed(1)}, ${neuron.position.z.toFixed(1)})
+                        </div>
+                    `;
+                    
+                    if (data.source_data) {
+                        const preview = data.source_data.substring(0, 200);
+                        html += `
+                            <div class="info-row">
+                                <span class="info-label">Content:</span><br>
+                                <div style="margin-top: 5px; padding: 5px; background: rgba(255,255,255,0.1); border-radius: 3px; font-size: 11px;">
+                                    ${preview}${data.source_data.length > 200 ? '...' : ''}
+                                </div>
+                            </div>
+                        `;
+                    }
+                    
+                    if (data.semantic_tags) {
+                        html += `
+                            <div class="info-row">
+                                <span class="info-label">Tags:</span> ${data.semantic_tags}
+                            </div>
+                        `;
+                    }
+                    
+                    if (data.activation_level !== undefined) {
+                        html += `
+                            <div class="info-row">
+                                <span class="info-label">Activation:</span> ${data.activation_level.toFixed(3)}
+                            </div>
+                        `;
+                    }
+                    
+                    detailsDiv.innerHTML = html;
+                    document.getElementById('neuron-info').style.display = 'block';
+                })
+                .catch(error => {
+                    console.error('Error fetching neuron details:', error);
+                });
+        }
+        
+        function closeNeuronInfo() {
+            document.getElementById('neuron-info').style.display = 'none';
+        }
+        
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            controls.update();
+            renderer.render(scene, camera);
+            
+            // Update FPS
+            frameCount++;
+            const now = Date.now();
+            if (now - lastTime >= 1000) {
+                document.getElementById('fps').textContent = frameCount;
+                frameCount = 0;
+                lastTime = now;
+            }
+        }
+        
+        // Start
+        init();
+    </script>
+</body>
+</html>
